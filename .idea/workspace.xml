@@ -1,15 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="3511ee1c-d282-4b76-a4b7-7db3f82d1f43" name="Changes" comment="Initial commit including three functions for Mocing average and RSA calculations and plotting the price chart.">
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="3511ee1c-d282-4b76-a4b7-7db3f82d1f43" name="Changes" comment="Created Readme File.">
+      <change afterPath="$PROJECT_DIR$/src/backtest/MACrossover_BT.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/backtest/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/indicators/MA.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/indicators/RSI.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/indicators/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/strategies/MACrossover.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/strategies/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/visualization/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/visualization/plots.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -39,6 +53,7 @@
     "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "Python.main.executor": "Run",
+    "Python.plots.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
@@ -244,7 +259,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1780693048751</updated>
-      <workItem from="1780693049864" duration="8613000" />
+      <workItem from="1780693049864" duration="18967000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit including three functions for Mocing average and RSA calculations and plotting the price chart.">
       <option name="closed" value="true" />
@@ -254,7 +269,23 @@
       <option name="project" value="LOCAL" />
       <updated>1780698460520</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="Update Project Artichexture and some namings on the main file.">
+      <option name="closed" value="true" />
+      <created>1780748026010</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1780748026010</updated>
+    </task>
+    <task id="LOCAL-00003" summary="Created Readme File.">
+      <option name="closed" value="true" />
+      <created>1780748138579</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1780748138579</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -262,9 +293,12 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Initial commit including three functions for Mocing average and RSA calculations and plotting the price chart." />
-    <option name="LAST_COMMIT_MESSAGE" value="Initial commit including three functions for Mocing average and RSA calculations and plotting the price chart." />
+    <MESSAGE value="Update Project Artichexture and some namings on the main file." />
+    <MESSAGE value="Created Readme File." />
+    <option name="LAST_COMMIT_MESSAGE" value="Created Readme File." />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Forex_General_Strategies$main.coverage" NAME="main Coverage Results" MODIFIED="1780747704517" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Forex_General_Strategies$main.coverage" NAME="main Coverage Results" MODIFIED="1780765688808" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Forex_General_Strategies$plots.coverage" NAME="plots Coverage Results" MODIFIED="1780751219051" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/visualization" />
   </component>
 </project>
