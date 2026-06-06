@@ -1,7 +1,10 @@
 import pandas as pd
 from src.indicators import MA
+from src.core import metatrader as MT
+import MetaTrader5 as mt5
+import time
 
-def macross(df: pd.DataFrame, small_ma: int = 20, big_ma: int = 200) -> int:
+def macross(df: pd.DataFrame, small_ma: int = 50, big_ma: int = 200) -> int:
     """
     :param df: price data
     :param small_ma: the value of short-term moving average
@@ -36,3 +39,68 @@ def macross(df: pd.DataFrame, small_ma: int = 20, big_ma: int = 200) -> int:
         return -1
 
     return 0
+
+def macross_live(SYMBOL: str = "EURUSD", TIMEFRAME = mt5.TIMEFRAME_M1, big_ma: int = 200, small_ma: int = 50):
+    """
+
+    :return:
+    """
+    N = big_ma + 1
+    if not mt5.initialize():
+        return 0
+
+    my_dataframe = pd.DataFrame()
+    current_balance = MT.get_account_balance()
+    trade_scale = int(current_balance/100)
+    last_processed_time = None
+
+    try:
+        while len(my_dataframe)<N:
+            my_dataframe = MT.update_candle_dataframe(
+                my_dataframe, SYMBOL, TIMEFRAME, N
+            )
+
+        while True:
+            my_dataframe = MT.update_candle_dataframe(
+                my_dataframe, SYMBOL, TIMEFRAME, N
+            )
+            current_latest_time = my_dataframe['time'].max()
+            if last_processed_time is not None and current_latest_time == last_processed_time:
+                time.sleep(1)
+                continue
+
+            signal = macross(my_dataframe, small_ma, big_ma)
+            if signal == 0:
+                continue
+            elif signal ==1:
+                stats = MT.get_positions_summary(SYMBOL)
+                if stats["sell_lots"] > 0:
+                    MT.close_market_positions(SYMBOL)
+                    MT.open_market_position(symbol=SYMBOL, order_type="buy", volume=(trade_scale*0.01))
+                if stats["buy_lots"] > trade_scale:
+                    MT.close_market_positions(SYMBOL)
+                    MT.open_market_position(symbol=SYMBOL, order_type="buy", volume=(trade_scale * 0.01))
+                elif stats["buy_lots"] == 0:
+                    MT.open_market_position(symbol=SYMBOL, order_type="buy", volume=(trade_scale*0.01))
+                elif stats["buy_lots"] < trade_scale:
+                    MT.open_market_position(symbol=SYMBOL, order_type="buy", volume=(trade_scale*0.01-stats["buy_lots"]))
+
+            elif signal == -1:
+                stats = MT.get_positions_summary(SYMBOL)
+                if stats["buy_lots"] > 0:
+                    MT.close_market_positions(SYMBOL)
+                    MT.open_market_position(symbol=SYMBOL, order_type="sell", volume=(trade_scale*0.01))
+                if stats["sell_lots"] > trade_scale:
+                    MT.close_market_positions(SYMBOL)
+                    MT.open_market_position(symbol=SYMBOL, order_type="sell", volume=(trade_scale*0.01))
+                elif stats["sell_lots"] == 0:
+                    MT.open_market_position(symbol=SYMBOL, order_type="sell", volume=(trade_scale*0.01))
+                elif stats["sell_lots"] < trade_scale:
+                    MT.open_market_position(symbol=SYMBOL, order_type="sell", volume=(trade_scale*0.01-stats["sell_lots"]))
+
+
+    except KeyboardInterrupt:
+        print("\nStopping script...")
+    finally:
+        mt5.shutdown()
+    return 1
