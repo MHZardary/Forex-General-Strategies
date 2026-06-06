@@ -26,8 +26,8 @@ def macrossover_btest(symbol: str = 'EURUSD', time_frame: str = 'M1', big_ma: in
     short_price = []
     last_signal = 0
 
-    for i in range(len(df)-big_ma):
-        df_sliced = df.iloc[i:i+big_ma]
+    for i in range(len(df)-big_ma-1):
+        df_sliced = df.iloc[i:i+big_ma+1]
         signal = MAC.macross(df_sliced, small_ma, big_ma)
         if signal == 1:
             long_price.append([df_sliced['Close'].iloc[-1], 0])
