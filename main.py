@@ -102,7 +102,7 @@ def plot_price_indicators(
             raise ValueError("DataFrame must have Date/Time columns or a DatetimeIndex")
 
     # --------------------------------------------------
-    # 2. Sort index (important for financial data)
+    # 2. Sort index (important for financial df)
     # --------------------------------------------------
     plot_df.sort_index(inplace=True)
 
@@ -173,11 +173,11 @@ def plot_price_indicators(
         title=title
     )
 
-data = pd.read_csv(r"data\EURUSD_M1_202603021037_202606052359.csv", sep="\t")
+df = pd.read_csv(r"data\raw\EURUSD_M1.csv", sep="\t")
 
-data.columns = data.columns.str.replace('<', '', regex=False)\
+df.columns = df.columns.str.replace('<', '', regex=False)\
                        .str.replace('>', '', regex=False)
-data = data.rename(columns={
+df = df.rename(columns={
     'DATE': 'Date',
     'TIME': 'Time',
     'OPEN': 'Open',
@@ -189,12 +189,12 @@ data = data.rename(columns={
     'SPREAD': 'Spread'
 })
 
-add_sma(data, 20)
-add_sma(data, 200)
-add_rsi(data)
+add_sma(df, 20)
+add_sma(df, 200)
+add_rsi(df)
 
 plot_price_indicators(
-    data,
+    df,
     sma_periods=[20, 200],
     rsi_periods=[14],
     last_n=60
