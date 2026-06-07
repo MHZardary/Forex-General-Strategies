@@ -69,6 +69,7 @@ def macross_live(SYMBOL: str = "EURUSD", TIMEFRAME = mt5.TIMEFRAME_M1, big_ma: i
                 time.sleep(1)
                 continue
 
+            last_processed_time = current_latest_time
             signal = macross(my_dataframe, small_ma, big_ma)
             if signal == 0:
                 continue
