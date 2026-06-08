@@ -110,6 +110,11 @@ def macrossover_btest_analysis(symbol: str = 'EURUSD', time_frame: str = 'M1', b
     df_trades['profit'] = df_trades['price_change'] * df_trades['direction']
     df_trades["cum_profit"] = df_trades["profit"].cumsum()
 
+    sum_profits = sum(df_trades[df_trades['profit']>0]['profit'].tolist())
+    sum_loss = -sum(df_trades[df_trades['profit'] < 0]['profit'].tolist())
+    profit_factor = sum_profits/sum_loss
+    print(f'Profit factor: {profit_factor}')
+
     plt.figure(figsize=(12, 6))
 
     # Profit per trade
