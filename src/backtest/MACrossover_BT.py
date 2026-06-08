@@ -115,6 +115,9 @@ def macrossover_btest_analysis(symbol: str = 'EURUSD', time_frame: str = 'M1', b
     profit_factor = sum_profits/sum_loss
     print(f'Profit factor: {profit_factor}')
 
+    roi = total_income*10
+    print(f'ROI is: {roi:.1f}%')
+
     plt.figure(figsize=(12, 6))
 
     # Profit per trade
