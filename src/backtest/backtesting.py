@@ -153,4 +153,30 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
     plt.tight_layout()
     plt.show()
 
+    # ==========================================
+    # CAGR PERFORMANCE METRICS
+    # ==========================================
+
+    # 1. Extract boundary datetimes
+    earliest_date = df['datetime'].min()
+    latest_trade_date = df_trades['exit_date'].max()
+
+    # 2. Calculate time delta in years
+    time_delta = latest_trade_date - earliest_date
+    years = time_delta.total_seconds() / (365.25 * 24 * 3600)  # Accurate fractional year calculation
+
+    # 3. Define an initial account balance to ground the compounding math
+    initial_balance = 100.0
+    ending_balance = initial_balance + total_income
+
+    # 4. Handle safety edge cases (e.g., zero years or catastrophic losses)
+    if years > 0 and ending_balance > 0:
+        cagr = (ending_balance / initial_balance) ** (1 / years) - 1
+        cagr_percentage = cagr * 100
+        print(
+            f"Backtest Horizon: {years:.2f} years ({earliest_date.strftime('%Y-%m-%d')} to {latest_trade_date.strftime('%Y-%m-%d')})")
+        print(f"CAGR: {cagr_percentage:.2f}%")
+    else:
+        print("CAGR: Cannot be calculated (Time horizon too short or total loss incurred)")
+
     return 1
