@@ -1,6 +1,6 @@
 import pandas as pd
 
-def add_sma(df: pd.DataFrame, interval: int, inplace: bool =True, price_col: str ='Close'):
+def add_sma(df: pd.DataFrame, interval: int, inplace: bool =True, price_col: str ='close'):
     """
     Add a Simple Moving Average (SMA) column to a DataFrame.
 
@@ -13,7 +13,7 @@ def add_sma(df: pd.DataFrame, interval: int, inplace: bool =True, price_col: str
     inplace : bool, default=True
         If True, modify the original DataFrame.
         If False, return a modified copy.
-    price_col : str, default='Close'
+    price_col : str, default='close'
         Column used to calculate the SMA.
 
     Returns

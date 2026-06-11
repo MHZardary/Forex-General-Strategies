@@ -1,107 +1,43 @@
 import pandas as pd
 from src.indicators import MA
-from src.core import metatrader as MT
-import MetaTrader5 as mt5
-import time
+from src.strategies import Strategy
 
-def macross(df: pd.DataFrame, small_ma: int = 50, big_ma: int = 200) -> int:
-    """
-    :param df: price data
-    :param small_ma: the value of short-term moving average
-    :param big_ma: the value of long-term moving average
-    :return: signal: +1 for going long and -1 for going short 0 for none
-    """
-    if len(df) < big_ma:
-        raise ValueError(f"Not enough data: DataFrame only has {len(df)} rows, but {big_ma} are required.")
+class MACrossover(Strategy.Strategy):
+    def __init__(self, short_window: int = 50, long_window: int = 200):
+        # The minimum bars needed matches the length of the slow moving average
+        super().__init__(name="Moving Average Crossover", min_bars_required=long_window+1)
+        self.short_window = short_window
+        self.long_window = long_window
 
-    if big_ma <= small_ma:
-        raise ValueError(f"Logic error: big_ma ({big_ma}) must be greater than small_ma ({small_ma}).")
+    def calculate_signal(self, df: pd.DataFrame) -> int:
+        assert len(df) >= self.min_bars_required, \
+            f'this strategy needs at least {self.min_bars_required} candles to run.'
 
-    # 2. Calculate Moving Averages
-    # We use .iloc[-2:] to get the last two calculated values for the signal
-    MA.add_sma(df, small_ma)
-    MA.add_sma(df, big_ma)
+        if len(df) < self.long_window:
+            raise ValueError(f"Not enough data: DataFrame only has {len(df)} rows, but {long_window} are required.")
 
-    # Get the last two values for both MAs
-    # prev = row before last, curr = latest row
-    prev_small = df[f'MA_{small_ma}'].iloc[-2]
-    curr_small = df[f'MA_{small_ma}'].iloc[-1]
-    prev_big = df[f'MA_{big_ma}'].iloc[-2]
-    curr_big = df[f'MA_{big_ma}'].iloc[-1]
+        if self.long_window <= self.short_window:
+            raise ValueError(f"Logic error: big_ma ({self.long_window}) must be greater than small_ma ({short_window}).")
 
-    # 3. Determine Signal
-    # Golden Cross: Small crosses ABOVE Big
-    if prev_small <= prev_big and curr_small > curr_big:
-        return 1
+        # 2. Calculate Moving Averages
+        # We use .iloc[-2:] to get the last two calculated values for the signal
+        MA.add_sma(df, self.short_window)
+        MA.add_sma(df, self.long_window)
 
-    # Death Cross: Small crosses BELOW Big
-    elif prev_small >= prev_big and curr_small < curr_big:
-        return -1
+        # Get the last two values for both MAs
+        # prev = row before last, curr = latest row
+        prev_small = df[f'MA_{self.short_window}'].iloc[-2]
+        curr_small = df[f'MA_{self.short_window}'].iloc[-1]
+        prev_big = df[f'MA_{self.long_window}'].iloc[-2]
+        curr_big = df[f'MA_{self.long_window}'].iloc[-1]
 
-    return 0
+        # 3. Determine Signal
+        # Golden Cross: Small crosses ABOVE Big
+        if prev_small <= prev_big and curr_small > curr_big:
+            return 1
 
-def macross_live(SYMBOL: str = "EURUSD", TIMEFRAME = mt5.TIMEFRAME_M1, big_ma: int = 200, small_ma: int = 50):
-    """
+        # Death Cross: Small crosses BELOW Big
+        elif prev_small >= prev_big and curr_small < curr_big:
+            return -1
 
-    :return:
-    """
-    N = big_ma + 1
-    if not mt5.initialize():
         return 0
-
-    my_dataframe = pd.DataFrame()
-    current_balance = MT.get_account_balance()
-    trade_scale = int(current_balance/100)
-    last_processed_time = None
-
-    try:
-        while len(my_dataframe)<N:
-            my_dataframe = MT.update_candle_dataframe(
-                my_dataframe, SYMBOL, TIMEFRAME, N
-            )
-
-        while True:
-            my_dataframe = MT.update_candle_dataframe(
-                my_dataframe, SYMBOL, TIMEFRAME, N
-            )
-            current_latest_time = my_dataframe['time'].max()
-            if last_processed_time is not None and current_latest_time == last_processed_time:
-                time.sleep(1)
-                continue
-
-            last_processed_time = current_latest_time
-            signal = macross(my_dataframe, small_ma, big_ma)
-            if signal == 0:
-                continue
-            elif signal ==1:
-                stats = MT.get_positions_summary(SYMBOL)
-                if stats["sell_lots"] > 0:
-                    MT.close_market_positions(SYMBOL)
-                    MT.open_market_position(symbol=SYMBOL, order_type="buy", volume=(trade_scale*0.01))
-                if stats["buy_lots"] > trade_scale:
-                    MT.close_market_positions(SYMBOL)
-                    MT.open_market_position(symbol=SYMBOL, order_type="buy", volume=(trade_scale * 0.01))
-                elif stats["buy_lots"] == 0:
-                    MT.open_market_position(symbol=SYMBOL, order_type="buy", volume=(trade_scale*0.01))
-                elif stats["buy_lots"] < trade_scale:
-                    MT.open_market_position(symbol=SYMBOL, order_type="buy", volume=(trade_scale*0.01-stats["buy_lots"]))
-
-            elif signal == -1:
-                stats = MT.get_positions_summary(SYMBOL)
-                if stats["buy_lots"] > 0:
-                    MT.close_market_positions(SYMBOL)
-                    MT.open_market_position(symbol=SYMBOL, order_type="sell", volume=(trade_scale*0.01))
-                if stats["sell_lots"] > trade_scale:
-                    MT.close_market_positions(SYMBOL)
-                    MT.open_market_position(symbol=SYMBOL, order_type="sell", volume=(trade_scale*0.01))
-                elif stats["sell_lots"] == 0:
-                    MT.open_market_position(symbol=SYMBOL, order_type="sell", volume=(trade_scale*0.01))
-                elif stats["sell_lots"] < trade_scale:
-                    MT.open_market_position(symbol=SYMBOL, order_type="sell", volume=(trade_scale*0.01-stats["sell_lots"]))
-
-
-    except KeyboardInterrupt:
-        print("\nStopping script...")
-    finally:
-        mt5.shutdown()
-    return 1
