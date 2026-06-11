@@ -1,15 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="3511ee1c-d282-4b76-a4b7-7db3f82d1f43" name="Changes" comment="ROI (Return On Investment) calculation added.">
-      <change afterPath="$PROJECT_DIR$/src/backtest/backtesting.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/core/LiveTrade.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/strategies/Strategy.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data/raw/EURUSD_M1.csv" beforeDir="false" afterPath="$PROJECT_DIR$/data/raw/EURUSD_1m.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/backtest/MACrossover_BT.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/indicators/MA.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/indicators/MA.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/strategies/MACrossover.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/strategies/MACrossover.py" afterDir="false" />
+    <list default="true" id="3511ee1c-d282-4b76-a4b7-7db3f82d1f43" name="Changes" comment="Successfully implemented OOD structure for the strategies enhancing scaleability of the program.">
+      <change beforePath="$PROJECT_DIR$/src/backtest/backtesting.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/backtest/backtesting.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,25 +39,26 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
-    &quot;Python.MACrossover.executor&quot;: &quot;Profiler&quot;,
-    &quot;Python.MACrossover_BT.executor&quot;: &quot;Run&quot;,
-    &quot;Python.main.executor&quot;: &quot;Run&quot;,
-    &quot;Python.plots.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;ai.playground.ignore.import.keys.banner.in.settings&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;org.jetbrains.plugins.github.ui.GithubSettingsConfigurable&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "Python.MACrossover.executor": "Profiler",
+    "Python.MACrossover_BT.executor": "Run",
+    "Python.backtesting.executor": "Run",
+    "Python.main.executor": "Run",
+    "Python.plots.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "ai.playground.ignore.import.keys.banner.in.settings": "true",
+    "git-widget-placeholder": "master",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "org.jetbrains.plugins.github.ui.GithubSettingsConfigurable",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -154,7 +148,23 @@
       <option name="project" value="LOCAL" />
       <updated>1780955493768</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Successfully implemented OOD structure for the strategies enhancing scaleability of the program.">
+      <option name="closed" value="true" />
+      <created>1781212810827</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1781212810827</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Successfully implemented OOD structure for the strategies enhancing scaleability of the program.">
+      <option name="closed" value="true" />
+      <created>1781212819840</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1781212819840</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -181,10 +191,12 @@
     <MESSAGE value="Critical bug fixes on calculating profit! added tqdm for Back Test!" />
     <MESSAGE value="Profit Factor (sum of profits to absolute sum of loss) calculation added." />
     <MESSAGE value="ROI (Return On Investment) calculation added." />
-    <option name="LAST_COMMIT_MESSAGE" value="ROI (Return On Investment) calculation added." />
+    <MESSAGE value="Successfully implemented OOD structure for the strategies enhancing scaleability of the program." />
+    <option name="LAST_COMMIT_MESSAGE" value="Successfully implemented OOD structure for the strategies enhancing scaleability of the program." />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Forex_General_Strategies$main.coverage" NAME="main Coverage Results" MODIFIED="1781212351814" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Forex_General_Strategies$backtesting.coverage" NAME="backtesting Coverage Results" MODIFIED="1781213206453" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/backtest" />
+    <SUITE FILE_PATH="coverage/Forex_General_Strategies$main.coverage" NAME="main Coverage Results" MODIFIED="1781213229538" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$plots.coverage" NAME="plots Coverage Results" MODIFIED="1780751219051" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/visualization" />
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$MACrossover_BT.coverage" NAME="MACrossover_BT Coverage Results" MODIFIED="1780954288438" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/backtest" />
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$MACrossover.coverage" NAME="MACrossover Coverage Results" MODIFIED="1780869662943" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/strategies" />
