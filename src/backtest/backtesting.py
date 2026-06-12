@@ -60,6 +60,7 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
     short_price = []
 
     for i in tqdm(range(len(df)-strategy.min_bars_required)):
+
         df_sliced = df.iloc[i:i+strategy.min_bars_required]
 
         current_close = df_sliced['close'].iloc[-1]
@@ -70,27 +71,36 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
 
         signal = strategy.calculate_signal(df_sliced)
 
-        is_continuous_reversal_long = strategy.is_continuous and signal == -1 and current_position == 1
-        is_continuous_reversal_short = strategy.is_continuous and signal == 1 and current_position == -1
+        if current_position == 1:  # Currently Long
+            if signal == 2 or signal == -1:
+                if len(long_price) > 0:
+                    long_price[-1][-1] = [current_close, dt]
+                current_position = 0
 
-        if signal == 2 or is_continuous_reversal_long or is_continuous_reversal_short:
-            if current_position == 1 and len(long_price) > 0:
-                long_price[-1][-1] = [current_close, dt]  # Close the long trade
-                current_position = 0  # Revert state to Flat
-            elif current_position == -1 and len(short_price) > 0:
-                short_price[-1][-1] = [current_close, dt]  # Close the short trade
-                current_position = 0  # Revert state to Flat
+                if strategy.is_continuous and signal == -1:
+                    short_price.append([[current_close, dt], None])
+                    current_position = -1
 
-            # 4. Handle Entries: Execute when a signal triggers and we aren't already sitting in that position
-        if signal == 1 and current_position != 1:
-            long_price.append([[current_close, dt], None])
-            current_position = 1
+        elif current_position == -1:  # Currently Short
+            if signal == 2 or signal == 1:
+                if len(short_price) > 0:
+                    short_price[-1][-1] = [current_close, dt]
+                current_position = 0
 
-        elif signal == -1 and current_position != -1:
-            short_price.append([[current_close, dt], None])
-            current_position = -1
+                if strategy.is_continuous and signal == 1:
+                    long_price.append([[current_close, dt], None])
+                    current_position = 1
 
-    # Cleanup trailing unclosed operations at the absolute end of structural history
+        else:
+            # Flat State
+            if signal == 1:
+                long_price.append([[current_close, dt], None])
+                current_position = 1
+            elif signal == -1:
+                short_price.append([[current_close, dt], None])
+                current_position = -1
+
+        # 🛡️ FIXED: Shifted out of the loop scope so trades are preserved during processing
     if len(short_price) > 0 and short_price[-1][1] is None:
         short_price = short_price[:-1]
     if len(long_price) > 0 and long_price[-1][1] is None:
@@ -131,18 +141,21 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
 
     df_trades = df_trades.sort_values("entry_date").reset_index(drop=True)
 
+    initial_balance = 100.0
+
     df_trades['price_change'] = df_trades['exit_price'] - df_trades['entry_price']
-    df_trades['profit'] = df_trades['price_change'] * df_trades['direction']
+    # Multiplied the price change to 10 to calculate the profit for lot size.
+    df_trades['profit'] = df_trades['price_change'] * df_trades['direction'] * 10
     df_trades["cum_profit"] = df_trades["profit"].cumsum()
 
     sum_profits = sum(df_trades[df_trades['profit'] > 0]['profit'].tolist())
     sum_loss = -sum(df_trades[df_trades['profit'] < 0]['profit'].tolist())
-    profit_factor = sum_profits / sum_loss
+    profit_factor = sum_profits / sum_loss if sum_loss > 0 else float('inf')
 
     back_test_results['profit factor'] = profit_factor
     back_test_results['total income'] = sum_profits - sum_loss
 
-    roi = back_test_results['total income'] * 10
+    roi = (back_test_results['total income'] / initial_balance) * 100
     back_test_results['roi'] = roi
 
     plt.figure(figsize=(12, 6))
@@ -183,8 +196,6 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
     time_delta = latest_trade_date - earliest_date
     years = time_delta.total_seconds() / (365.25 * 24 * 3600)  # Accurate fractional year calculation
 
-    # 3. Define an initial account balance to ground the compounding math
-    initial_balance = 100.0
     ending_balance = initial_balance + back_test_results['total income']
 
     if years > 0 and ending_balance > 0:
@@ -198,8 +209,7 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
         # SHARPE RATIO COMPUTATION CORE
         # =========================================================
         # Calculate fractional percentage return per individual trade transaction
-        df_trades['return_pct'] = (df_trades['exit_price'] - df_trades['entry_price']) * df_trades['direction'] / \
-                                  df_trades['entry_price']
+        df_trades['return_pct'] = df_trades['profit'] / initial_balance
 
         avg_trade_return = df_trades['return_pct'].mean()
         std_trade_return = df_trades['return_pct'].std()
@@ -219,8 +229,7 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
             back_test_results['annualized_sharpe'] = 0.0
 
         # Sortino Calculation (Filter out everything above 0 to isolate downside volatility)
-        downside_returns = df_trades['return_pct'].copy()
-        downside_returns[downside_returns > 0] = 0  # Replace positive gains with 0
+        downside_returns = df_trades.loc[df_trades['return_pct'] < 0, 'return_pct']
 
         # Compute Downside Deviation
         std_downside_return = np.sqrt(np.mean(downside_returns ** 2))
