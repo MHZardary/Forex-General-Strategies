@@ -3,6 +3,7 @@ import pandas as pd
 from tqdm import tqdm
 from src.strategies import Strategy
 import matplotlib.pyplot as plt
+import os
 
 
 def data_loader(symbol: str = 'EURUSD', time_frame: str = '1m')-> pd.DataFrame:
@@ -23,14 +24,26 @@ def data_loader(symbol: str = 'EURUSD', time_frame: str = '1m')-> pd.DataFrame:
         ohlcv headers and a parsed datetime index column.
     """
     file_name = f"{symbol}_{time_frame}.csv"
-    path = "data/raw/" + file_name
+    path = os.path.join("data", "raw", file_name)
 
     # Import MT5 exported data using standard tab-separated formatting
-    df = pd.read_csv(path, sep="\t")
+    try:
+        df = pd.read_csv(path, sep="\t")
+    except FileNotFoundError:
+        print(f"[Error] Historical data source file not found at: {path}")
+        return pd.DataFrame()
+    except Exception as e:
+        print(f"[Error] Failed to read data stream from {path}: {str(e)}")
+        return pd.DataFrame()
 
-    # Clean header metadata brackets
-    df.columns = df.columns.str.replace('<', '', regex=False) \
-        .str.replace('>', '', regex=False)
+    # Clean header metadata brackets safely
+    df.columns = df.columns.str.replace('<', '', regex=False).str.replace('>', '', regex=False)
+
+    # Validate that all primary required columns are fully present in the source matrix
+    required_cols = {'DATE', 'TIME', 'OPEN', 'HIGH', 'LOW', 'CLOSE'}
+    if not required_cols.issubset(df.columns):
+        print(f"[Error] Source dataset columns at {path} are missing required MT5 headers.")
+        return pd.DataFrame()
 
     # Map raw headers to lowercase standard notation
     df = df.rename(columns={
@@ -46,10 +59,14 @@ def data_loader(symbol: str = 'EURUSD', time_frame: str = '1m')-> pd.DataFrame:
     })
 
     # Combine string date components into a single datetime column
-    df['datetime'] = pd.to_datetime(
-        df['date'] + ' ' + df['time'],
-        format="%Y.%m.%d %H:%M:%S",
-    )
+    try:
+        df['datetime'] = pd.to_datetime(
+            df['date'] + ' ' + df['time'],
+            format="%Y.%m.%d %H:%M:%S",
+        )
+    except Exception as e:
+        print(f"[Error] Datetime parsing conversion failed for {symbol}: {str(e)}")
+        return pd.DataFrame()
 
     return df
 
@@ -77,7 +94,16 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
 
     # Ingest full historical series
     df = data_loader(symbol, time_frame)
+    if df.empty:
+        print(f"[Aborting] Empty dataset returned for {symbol}. Cancelling backtest.")
+        return back_test_results
+
     back_test_results['Financial data'] = df
+
+    # Guard Condition: Ensure database context size satisfies lookback requirements
+    if len(df) <= strategy.min_bars_required:
+        print(f"[Aborting] Data length ({len(df)}) is insufficient for lookback window ({strategy.min_bars_required}).")
+        return back_test_results
 
     current_position = 0
     long_price = []
@@ -287,7 +313,7 @@ def back_tester_results(strategy: Strategy.Strategy, symbol: str = 'EURUSD', tim
     # Trigger simulation runner
     results = back_tester(strategy, symbol, time_frame)
 
-    if results['Trades data'].empty:
+    if 'Trades data' not in results or results['Trades data'].empty:
         print('Seems this strategy not generated any signals, for accurate inspection, checking logs is highly recommended')
     else:
         # Format terminal logging performance interface tables
@@ -303,5 +329,6 @@ def back_tester_results(strategy: Strategy.Strategy, symbol: str = 'EURUSD', tim
         print(f"Annualized Sortino Ratio:  {results.get('annualized_sortino', 0.0):.3f}")
         print("=" * 50 + "\n")
 
-        # Display the generated financial charts window
-        results['profit to time chart'].show()
+        # Safely render visualization window if figure buffer object exists
+        if 'profit to time chart' in results and results['profit to time chart'] is not None:
+            results['profit to time chart'].show()

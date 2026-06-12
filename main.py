@@ -1,4 +1,3 @@
-# Todo: Error handling
 # Todo: logging
 # Todo: Define more criterias
 

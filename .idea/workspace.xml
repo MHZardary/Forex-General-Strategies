@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="3511ee1c-d282-4b76-a4b7-7db3f82d1f43" name="Changes" comment="Sharpe ratio calculation added, and the result report print is improved.">
+    <list default="true" id="3511ee1c-d282-4b76-a4b7-7db3f82d1f43" name="Changes" comment="Commenting added to enhance the readability of codes.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/backtest/backtesting.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/backtest/backtesting.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/core/LiveTrade.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/LiveTrade.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/core/metatrader.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/metatrader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/strategies/MACrossover.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/strategies/MACrossover.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/strategies/Strategy.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/strategies/Strategy.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -109,7 +107,7 @@
       <option name="presentableId" value="Default" />
       <updated>1780693048751</updated>
       <workItem from="1780693049864" duration="35935000" />
-      <workItem from="1781270566786" duration="5650000" />
+      <workItem from="1781270566786" duration="8631000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit including three functions for Mocing average and RSA calculations and plotting the price chart.">
       <option name="closed" value="true" />
@@ -239,7 +237,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781263424903</updated>
     </task>
-    <option name="localTasksCounter" value="17" />
+    <task id="LOCAL-00017" summary="Commenting added to enhance the readability of codes.">
+      <option name="closed" value="true" />
+      <created>1781276729339</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1781276729339</updated>
+    </task>
+    <option name="localTasksCounter" value="18" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -271,11 +277,12 @@
     <MESSAGE value="Improved strategies to handle continues and trigger based strategies. Improved backtesting and live trades to compply with new changes." />
     <MESSAGE value="Separated backtest analysis from showing results to keep scalability of codes." />
     <MESSAGE value="Sharpe ratio calculation added, and the result report print is improved." />
-    <option name="LAST_COMMIT_MESSAGE" value="Sharpe ratio calculation added, and the result report print is improved." />
+    <MESSAGE value="Commenting added to enhance the readability of codes." />
+    <option name="LAST_COMMIT_MESSAGE" value="Commenting added to enhance the readability of codes." />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$backtesting.coverage" NAME="backtesting Coverage Results" MODIFIED="1781258933987" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/backtest" />
-    <SUITE FILE_PATH="coverage/Forex_General_Strategies$main.coverage" NAME="main Coverage Results" MODIFIED="1781270587693" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/Forex_General_Strategies$main.coverage" NAME="main Coverage Results" MODIFIED="1781281398312" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$plots.coverage" NAME="plots Coverage Results" MODIFIED="1780751219051" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/visualization" />
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$MACrossover_BT.coverage" NAME="MACrossover_BT Coverage Results" MODIFIED="1780954288438" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/backtest" />
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$MACrossover.coverage" NAME="MACrossover Coverage Results" MODIFIED="1780869662943" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/strategies" />

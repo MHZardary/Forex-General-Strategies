@@ -23,35 +23,53 @@ def update_candle_dataframe(df, symbol, timeframe, n_max):
         Returns the updated pandas DataFrame containing historical candle data,
         or 0 if the data fetch fails.
     """
-    # Fetch the most recently completed historical candle bar
-    rates = mt5.copy_rates_from_pos(symbol, timeframe, 1, 1)
+    try:
+        # Fetch the most recently completed historical candle bar
+        rates = mt5.copy_rates_from_pos(symbol, timeframe, 1, 1)
 
-    if rates is None or len(rates) == 0:
-        return 0
+        # Handle terminal connection drops or missing market feed assets defensively
+        if rates is None or len(rates) == 0:
+            print(f"[Warning] Failed to fetch current rates for {symbol}. MT5 Error: {mt5.last_error()}")
+            return 0
 
-    # Parse numerical timestamp into a standard datetime object
-    new_candle_time = pd.to_datetime(rates[0]["time"], unit="s")
+        # Parse numerical timestamp into a standard datetime object
+        new_candle_time = pd.to_datetime(rates[0]["time"], unit="s")
+        required_columns = ["time", "open", "high", "low", "close", "tick_volume"]
 
-    # Cold Warmup: Populate full database slice if dataframe buffer is uninitialized
-    if df.empty:
-        initial_rates = mt5.copy_rates_from_pos(symbol, timeframe, 1, n_max)
-        df = pd.DataFrame(initial_rates)
-        df["time"] = pd.to_datetime(df["time"], unit="s")
-        df = df[["time", "open", "high", "low", "close", "tick_volume"]]
+        # Cold Warmup: Populate full database slice if dataframe buffer is uninitialized
+        if df is None or df.empty:
+            initial_rates = mt5.copy_rates_from_pos(symbol, timeframe, 1, n_max)
+            if initial_rates is None or len(initial_rates) == 0:
+                print(f"[Error] Initialization failed. Cannot warmup history for {symbol}.")
+                return 0
+
+            df = pd.DataFrame(initial_rates)
+            df["time"] = pd.to_datetime(df["time"], unit="s")
+
+            # Guard against structural metadata adjustments by the broker platform
+            if not set(required_columns).issubset(df.columns):
+                print(f"[Error] Unexpected data format returned from MT5 for symbol: {symbol}")
+                return 0
+
+            df = df[required_columns]
+            return df
+
+        # Real-Time Append: Push the newest candle row if the bar interval timestamp has progressed
+        if new_candle_time > df["time"].max():
+            new_row = pd.DataFrame(rates)
+            new_row["time"] = pd.to_datetime(new_row["time"], unit="s")
+            new_row = new_row[required_columns]
+            df = pd.concat([df, new_row], ignore_index=True)
+
+            # Dynamic Memory Management: Trim oldest records exceeding memory allocation targets
+            if len(df) > n_max:
+                df = df.iloc[-n_max:].reset_index(drop=True)
+
         return df
 
-    # Real-Time Append: Push the newest candle row if the bar interval timestamp has progressed
-    if new_candle_time > df["time"].max():
-        new_row = pd.DataFrame(rates)
-        new_row["time"] = pd.to_datetime(new_row["time"], unit="s")
-        new_row = new_row[["time", "open", "high", "low", "close", "tick_volume"]]
-        df = pd.concat([df, new_row], ignore_index=True)
-
-        # Dynamic Memory Management: Trim oldest records exceeding memory allocation targets
-        if len(df) > n_max:
-            df = df.iloc[-n_max:].reset_index(drop=True)
-
-    return df
+    except Exception as e:
+        print(f"[Critical Exception] Failed updating dataframe for {symbol}: {str(e)}")
+        return 0
 
 def get_account_balance():
     """
@@ -64,12 +82,15 @@ def get_account_balance():
     float or None
         The current account balance currency value if successful, None otherwise.
     """
-    account_info = mt5.account_info()
-
-    if account_info is None:
+    try:
+        account_info = mt5.account_info()
+        if account_info is None:
+            print(f"[Error] Could not fetch account info. Terminal disconnected. Code: {mt5.last_error()}")
+            return None
+        return account_info.balance
+    except Exception as e:
+        print(f"[Exception] Error reading account metrics data: {str(e)}")
         return None
-
-    return account_info.balance
 
 def get_positions_summary(symbol):
     """
@@ -85,31 +106,36 @@ def get_positions_summary(symbol):
     dict
         A summary dictionary tracking transaction count maps and volume lot distributions.
     """
-    # Initialize the tracking metric storage schema
     summary = {"buy_count": 0, "buy_lots": 0.0, "sell_count": 0, "sell_lots": 0.0}
 
-    # Fetch live execution parameters from active terminal server streams
-    positions = mt5.positions_get(symbol=symbol)
+    try:
+        # Fetch live execution parameters from active terminal server streams
+        positions = mt5.positions_get(symbol=symbol)
 
-    if positions is None:
-        print(f"Error fetching positions. Error code: {mt5.last_error()}")
+        # Distinguish between an empty market tracker state and a terminal error disconnect
+        if positions is None:
+            err_code = mt5.last_error()
+            if err_code != mt5.RES_穩_OK:  # Filter genuine communication crashes
+                print(f"[Error] Terminal communication broken for {symbol}. Code: {err_code}")
+            return summary
+
+        # Separate total volumetric and item values into execution vectors
+        for pos in positions:
+            if pos.type == mt5.POSITION_TYPE_BUY:
+                summary["buy_count"] += 1
+                summary["buy_lots"] += pos.volume
+            elif pos.type == mt5.POSITION_TYPE_SELL:
+                summary["sell_count"] += 1
+                summary["sell_lots"] += pos.volume
+
+        # Round floating numbers to eliminate precision drift across allocation vectors
+        summary["buy_lots"] = round(summary["buy_lots"], 2)
+        summary["sell_lots"] = round(summary["sell_lots"], 2)
         return summary
 
-    # Separate total volumetric and item values into execution vectors
-    for pos in positions:
-        if pos.type == mt5.POSITION_TYPE_BUY:
-            summary["buy_count"] += 1
-            summary["buy_lots"] += pos.volume
-
-        elif pos.type == mt5.POSITION_TYPE_SELL:
-            summary["sell_count"] += 1
-            summary["sell_lots"] += pos.volume
-
-    # Round floating numbers to eliminate precision drift across allocation vectors
-    summary["buy_lots"] = round(summary["buy_lots"], 2)
-    summary["sell_lots"] = round(summary["sell_lots"], 2)
-
-    return summary
+    except Exception as e:
+        print(f"[Exception] Failed compiling open position summary profiles for {symbol}: {str(e)}")
+        return summary
 
 def close_market_positions(symbol, side_to_close="all"):
     """
@@ -127,76 +153,81 @@ def close_market_positions(symbol, side_to_close="all"):
     bool
         True if all targeted positions were processed successfully, False otherwise.
     """
-    # Pull active transaction items matching target token filter
-    positions = mt5.positions_get(symbol=symbol)
+    try:
+        positions = mt5.positions_get(symbol=symbol)
 
-    if positions is None:
-        print(f"No positions found or error occurred: {mt5.last_error()}")
+        if positions is None:
+            print(f"[Error] Failed to read open data records to liquidate. Code: {mt5.last_error()}")
+            return False
+
+        if len(positions) == 0:
+            return True
+
+        side_to_close = side_to_close.lower()
+        all_successful = True
+
+        # Liquidation Loop: Iterate over open transactions
+        for pos in positions:
+            if side_to_close == "buy" and pos.type != mt5.POSITION_TYPE_BUY:
+                continue
+            if side_to_close == "sell" and pos.type != mt5.POSITION_TYPE_SELL:
+                continue
+
+            # Refresh pricing info to maximize fill execution accuracy
+            tick = mt5.symbol_info_tick(symbol)
+            if tick is None:
+                print(f"[Error] Liquidation price snapshot dropped for {symbol}. Skipping ticket #{pos.ticket}")
+                all_successful = False
+                continue
+
+            # Counter-Trade Valuation: Target opposite asset values to close out exposure
+            if pos.type == mt5.POSITION_TYPE_BUY:
+                order_type = mt5.ORDER_TYPE_SELL
+                price = tick.bid
+            elif pos.type == mt5.POSITION_TYPE_SELL:
+                order_type = mt5.ORDER_TYPE_BUY
+                price = tick.ask
+            else:
+                continue
+
+            # Format trade close out dictionary request payload
+            close_request = {
+                "action": mt5.TRADE_ACTION_DEAL,
+                "symbol": symbol,
+                "volume": pos.volume,
+                "type": order_type,
+                "position": pos.ticket,  # Critical link connection reference ID
+                "price": price,
+                "deviation": 20,
+                "magic": 0,
+                "comment": "Python closing script",
+                "type_time": mt5.ORDER_TIME_GTC,
+                "type_filling": mt5.ORDER_FILLING_IOC,
+            }
+
+            # Dispatch transmission block directly to MT5 order server terminal
+            result = mt5.order_send(close_request)
+
+            # Defensive Check: Handle total connection or communication losses during dispatch
+            if result is None:
+                print(
+                    f"[Critical] Order routing failed entirely for close out ticket #{pos.ticket}. Code: {mt5.last_error()}")
+                all_successful = False
+                continue
+
+            # Confirm settlement feedback codes are correct
+            if result.retcode != mt5.TRADE_RETCODE_DONE:
+                print(
+                    f"[Reject] Broker denied close order #{pos.ticket}. Reason: {result.comment} (Code: {result.retcode})")
+                all_successful = False
+            else:
+                print(f"Successfully closed position #{pos.ticket} ({pos.volume} lots)")
+
+        return all_successful
+
+    except Exception as e:
+        print(f"[Critical Exception] Position liquidation process failed completely for {symbol}: {str(e)}")
         return False
-
-    if len(positions) == 0:
-        print(f"No open positions to close for {symbol}.")
-        return True
-
-    # Standardize parameters to prevent casing validation faults
-    side_to_close = side_to_close.lower()
-    all_successful = True
-
-    # Liquidation Loop: Iterate over open transactions
-    for pos in positions:
-        # Enforce direction filters
-        if side_to_close == "buy" and pos.type != mt5.POSITION_TYPE_BUY:
-            continue
-        if side_to_close == "sell" and pos.type != mt5.POSITION_TYPE_SELL:
-            continue
-
-        # Refresh pricing info to maximize fill execution accuracy
-        tick = mt5.symbol_info_tick(symbol)
-        if tick is None:
-            print(f"Failed to get tick data for {symbol} while closing.")
-            all_successful = False
-            continue
-
-        # Counter-Trade Valuation: Target opposite asset values to close out exposure
-        if pos.type == mt5.POSITION_TYPE_BUY:
-            order_type = mt5.ORDER_TYPE_SELL
-            price = tick.bid  # Close a Buy at the Bid price
-        elif pos.type == mt5.POSITION_TYPE_SELL:
-            order_type = mt5.ORDER_TYPE_BUY
-            price = tick.ask  # Close a Sell at the Ask price
-        else:
-            continue
-
-        # Format trade close out dictionary request payload
-        close_request = {
-            "action": mt5.TRADE_ACTION_DEAL,
-            "symbol": symbol,
-            "volume": pos.volume,
-            "type": order_type,
-            "position": pos.ticket,
-            "price": price,
-            "deviation": 20,
-            "magic": 0,
-            "comment": "Python closing script",
-            "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_IOC,
-        }
-
-        # Dispatch transmission block directly to MT5 order server terminal
-        result = mt5.order_send(close_request)
-
-        # Confirm settlement feedback codes are correct
-        if result.retcode != mt5.TRADE_RETCODE_DONE:
-            print(
-                f"Failed to close position #{pos.ticket}. Error: {result.comment} (Code: {result.retcode})"
-            )
-            all_successful = False
-        else:
-            print(
-                f"Successfully closed position #{pos.ticket} ({pos.volume} lots)"
-            )
-
-    return all_successful
 
 def open_market_position(symbol, order_type, volume, deviation=20, magic=0):
     """
@@ -220,58 +251,56 @@ def open_market_position(symbol, order_type, volume, deviation=20, magic=0):
     OrderSendResult or None
         The MT5 response structure object if processed, or None if failed.
     """
-    # Standardize parameter variables to lowercase
-    direction = order_type.lower()
+    try:
+        direction = order_type.lower()
 
-    # Synchronize fast real-time ticking values
-    tick = mt5.symbol_info_tick(symbol)
-    if tick is None:
-        print(
-            f"Failed to fetch tick data for {symbol}. Error: {mt5.last_error()}"
-        )
+        # Synchronize fast real-time ticking values
+        tick = mt5.symbol_info_tick(symbol)
+        if tick is None:
+            print(f"[Error] Real-time market tick pricing stream missing for {symbol}. Code: {mt5.last_error()}")
+            return None
+
+        # Structural Routing: Match trade directions to corresponding order book limits
+        if direction == "buy":
+            mt5_order_type = mt5.ORDER_TYPE_BUY
+            price = tick.ask
+        elif direction == "sell":
+            mt5_order_type = mt5.ORDER_TYPE_SELL
+            price = tick.bid
+        else:
+            print(f"[Error] Invalid order side parameter string passed: '{order_type}'")
+            return None
+
+        # Construct execution transaction specifications payload
+        trade_request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": symbol,
+            "volume": float(volume),
+            "type": mt5_order_type,
+            "price": price,
+            "deviation": deviation,
+            "magic": magic,
+            "comment": "Python execution script",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+
+        # Dispatch market request transaction to your broker network
+        result = mt5.order_send(trade_request)
+
+        # Defensive Check: Secure module from crashing on server connection timeouts
+        if result is None:
+            print(f"[Critical] Request dropped silently by network routing layer. Code: {mt5.last_error()}")
+            return None
+
+        # Check broker processing status codes before confirming trade locally
+        if result.retcode != mt5.TRADE_RETCODE_DONE:
+            print(f"[Execution Rejected] Broker rejected trade deal entry. Code: {result.retcode} ({result.comment})")
+        else:
+            print(f"Successfully opened {direction.upper()} | Ticket #{result.order} | Lots: {volume}")
+
+        return result
+
+    except Exception as e:
+        print(f"[Critical Exception] Trade setup execution pipeline broke unexpectedly: {str(e)}")
         return None
-
-    # Structural Routing: Match trade directions to corresponding order book limits
-    if direction == "buy":
-        mt5_order_type = mt5.ORDER_TYPE_BUY
-        price = tick.ask
-    elif direction == "sell":
-        mt5_order_type = mt5.ORDER_TYPE_SELL
-        price = tick.bid
-    else:
-        print(f"Invalid direction '{order_type}'. Use 'buy' or 'sell'.")
-        return None
-
-    # Construct execution transaction specifications payload
-    trade_request = {
-        "action": mt5.TRADE_ACTION_DEAL,
-        "symbol": symbol,
-        "volume": float(volume),
-        "type": mt5_order_type,
-        "price": price,
-        "deviation": deviation,
-        "magic": magic,
-        "comment": "Python execution script",
-        "type_time": mt5.ORDER_TIME_GTC,
-        "type_filling": mt5.ORDER_FILLING_IOC,
-    }
-
-    # Dispatch market request transaction to your broker network
-    result = mt5.order_send(trade_request)
-
-
-    if result is None:
-        print(f"Order submission failed drastically: {mt5.last_error()}")
-        return None
-
-    # Check broker processing status codes before confirming trade locally
-    if result.retcode != mt5.TRADE_RETCODE_DONE:
-        print(
-            f"Trade Execution Failed. Broker Rejected. Code: {result.retcode} ({result.comment})"
-        )
-    else:
-        print(
-            f"Successfully opened {direction.upper()} | Ticket #{result.order} | Lots: {volume}"
-        )
-
-    return result
