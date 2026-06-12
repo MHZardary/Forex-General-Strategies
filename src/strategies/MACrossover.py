@@ -1,5 +1,4 @@
 import pandas as pd
-from src.indicators import MA
 from src.strategies import Strategy
 
 class MACrossover(Strategy.Strategy):

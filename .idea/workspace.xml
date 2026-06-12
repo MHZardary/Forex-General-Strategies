@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="3511ee1c-d282-4b76-a4b7-7db3f82d1f43" name="Changes" comment="Commenting added to enhance the readability of codes.">
+    <list default="true" id="3511ee1c-d282-4b76-a4b7-7db3f82d1f43" name="Changes" comment="Error handling added and comments enhanced.">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/backtest/backtesting.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/backtest/backtesting.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/core/LiveTrade.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/LiveTrade.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/core/metatrader.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/metatrader.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/strategies/MACrossover.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/strategies/MACrossover.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,12 +30,12 @@
     &quot;assignee&quot;: &quot;MHZardary&quot;
   }
 }</component>
-  <component name="GithubPullRequestsUISettings">{
-  &quot;selectedUrlAndAccountId&quot;: {
-    &quot;url&quot;: &quot;https://github.com/MHZardary/Forex-General-Strategies.git&quot;,
-    &quot;accountId&quot;: &quot;ad0532f3-6788-48fb-b6b7-e6438708c8b5&quot;
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/MHZardary/Forex-General-Strategies.git",
+    "accountId": "76fca8a2-cce6-47d3-9133-e8bbc0aa3b1e"
   }
-}</component>
+}]]></component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 3
 }</component>
@@ -107,7 +108,7 @@
       <option name="presentableId" value="Default" />
       <updated>1780693048751</updated>
       <workItem from="1780693049864" duration="35935000" />
-      <workItem from="1781270566786" duration="8631000" />
+      <workItem from="1781270566786" duration="11249000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit including three functions for Mocing average and RSA calculations and plotting the price chart.">
       <option name="closed" value="true" />
@@ -245,7 +246,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781276729339</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="Error handling added and comments enhanced.">
+      <option name="closed" value="true" />
+      <created>1781281619135</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1781281619135</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -278,11 +287,12 @@
     <MESSAGE value="Separated backtest analysis from showing results to keep scalability of codes." />
     <MESSAGE value="Sharpe ratio calculation added, and the result report print is improved." />
     <MESSAGE value="Commenting added to enhance the readability of codes." />
-    <option name="LAST_COMMIT_MESSAGE" value="Commenting added to enhance the readability of codes." />
+    <MESSAGE value="Error handling added and comments enhanced." />
+    <option name="LAST_COMMIT_MESSAGE" value="Error handling added and comments enhanced." />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$backtesting.coverage" NAME="backtesting Coverage Results" MODIFIED="1781258933987" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/backtest" />
-    <SUITE FILE_PATH="coverage/Forex_General_Strategies$main.coverage" NAME="main Coverage Results" MODIFIED="1781281398312" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/Forex_General_Strategies$main.coverage" NAME="main Coverage Results" MODIFIED="1781283796057" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$plots.coverage" NAME="plots Coverage Results" MODIFIED="1780751219051" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/visualization" />
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$MACrossover_BT.coverage" NAME="MACrossover_BT Coverage Results" MODIFIED="1780954288438" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/backtest" />
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$MACrossover.coverage" NAME="MACrossover Coverage Results" MODIFIED="1780869662943" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/strategies" />

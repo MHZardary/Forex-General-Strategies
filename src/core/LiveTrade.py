@@ -3,6 +3,26 @@ import MetaTrader5 as mt5
 import time
 from src.strategies import Strategy
 import pandas as pd
+import os
+import logging
+from datetime import datetime
+
+# Initialize file system workspace directories dynamically
+LOG_DIR = "logs"
+os.makedirs(LOG_DIR, exist_ok=True)
+
+# Generate a cleanly tracked log file footprint for this specific core session instance
+log_filename = os.path.join(LOG_DIR, f"live_execution_{datetime.now().strftime('%Y%m%d')}.log")
+
+# Setup the system configuration parameters (Ensuring no console print streaming occurs)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] [%(funcName)s] %(message)s",
+    handlers=[
+        logging.FileHandler(log_filename, encoding="utf-8")
+    ]
+)
+logger = logging.getLogger("live_engine_logger")
 
 def live(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = '1m'):
     """
@@ -25,7 +45,7 @@ def live(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = 
     """
     # Connect to the MetaTrader 5 terminal application
     if not mt5.initialize():
-        print("[Critical] Failed to initialize MT5 terminal on startup.")
+        logger.error("Failed to initialize MT5 terminal on startup.")
         return 0
 
     # Calculate initial position sizing based on account equity rules
@@ -35,6 +55,7 @@ def live(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = 
     max_warmup_attempts = 30
 
     try:
+        logger.info(f"Starting historical data warmup layer for {symbol}...")
         # Warm up historical dataframe buffer to meet minimum strategy requirements
         while len(my_dataframe) < strategy.min_bars_required:
             returned_data = MT.update_candle_dataframe(
@@ -46,26 +67,26 @@ def live(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = 
                 my_dataframe = returned_data
             else:
                 warmup_attempts += 1
-                print(f"[Warning] Warmup data poll failed ({warmup_attempts}/{max_warmup_attempts}). Retrying...")
+                logger.warning(f"Warmup data poll failed ({warmup_attempts}/{max_warmup_attempts}). Retrying...")
                 if warmup_attempts >= max_warmup_attempts:
-                    print("[Error] Maximum historical warmup limits exhausted. Terminating core loop safely.")
+                    logger.error("Maximum historical warmup limits exhausted. Terminating core loop safely.")
                     return 0
             time.sleep(1)
 
-        print(f"Warmup successful. History buffer holds {len(my_dataframe)} candles. Entering live trading loop...")
+        logger.info(f"Warmup successful. History buffer holds {len(my_dataframe)} candles. Entering live trading loop...")
 
         # Core real-time execution loop
         while True:
             # Check application link visibility and force re-initialization if dropped
             if not mt5.terminal_info() or not mt5.initialize():
-                print("[Warning] MetaTrader 5 link down. Attempting dynamic link recovery...")
+                logger.warning("MetaTrader 5 link down. Attempting dynamic link recovery...")
                 time.sleep(5)
                 continue
 
             # Dynamically recalculate target lot volume using live balance snapshots
             current_balance = MT.get_account_balance()
             if current_balance is None:
-                print("[Warning] Could not extract live account balance. Skipping calculation pass.")
+                logger.warning("Could not extract live account balance. Skipping calculation pass.")
                 time.sleep(2)
                 continue
             target_volume = round(max(0.01, float(int(current_balance / 100)) * 0.01), 2)
@@ -79,14 +100,14 @@ def live(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = 
             if isinstance(returned_data, pd.DataFrame) and not returned_data.empty:
                 my_dataframe = returned_data
             else:
-                print(f"[Warning] Failed to fetch live data update tick for {symbol}. Postponing calculation step.")
+                logger.warning(f"Failed to fetch live data update tick for {symbol}. Postponing calculation step.")
                 time.sleep(2)
                 continue
 
             # Time-gating: Skip loop iterations unless a new candle bar has officially arrived
             current_latest_time = my_dataframe['time'].max()
             if pd.isna(current_latest_time):
-                print("[Warning] Extracted invalid timestamp from data engine. Skipping iteration.")
+                logger.warning("Extracted invalid timestamp from data engine. Skipping iteration.")
                 time.sleep(1)
                 continue
 
@@ -115,7 +136,7 @@ def live(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = 
 
             # Handle explicit flatten instructions (Signal Code: 2)
             if signal == 2:
-                print(f"[{current_latest_time}] Execution Event -> Flattening position for {symbol}.")
+                logger.info(f"[{current_latest_time}] Execution Event -> Flattening position for {symbol}.")
                 MT.close_market_positions(symbol)
                 stats = {"buy_lots": 0.0, "sell_lots": 0.0}
                 current_position = 0
@@ -126,19 +147,21 @@ def live(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = 
             if signal == 1:
                 # Continuous Reversal: Clean up conflicting short exposure first
                 if stats.get("sell_lots", 0.0) > 0:
+                    logger.info(f"[{current_latest_time}] Continuous Reversal -> Closing short before long entry.")
                     MT.close_market_positions(symbol, side_to_close="sell")
                     stats["sell_lots"] = 0.0
 
                     # Allocation Management: Route entry, scale-up, or scale-down orders
                     if stats.get("buy_lots", 0.0) == 0:
-                        print(f"[{current_latest_time}] Execution Event -> Opening new Long trade.")
+                        logger.info(f"[{current_latest_time}] Execution Event -> Opening new Long trade.")
                         MT.open_market_position(symbol=symbol, order_type="buy", volume=target_volume)
                     elif stats["buy_lots"] < target_volume:
                         needed_vol = round(target_volume - stats["buy_lots"], 2)
                         if needed_vol >= 0.01:
+                            logger.info(f"[{current_latest_time}] Allocation Management -> Scaling up Long exposure by {needed_vol} lots.")
                             MT.open_market_position(symbol=symbol, order_type="buy", volume=needed_vol)
                     elif stats["buy_lots"] > target_volume:
-                        print(f"[{current_latest_time}] Portfolio Adjustment -> Downscaling long position exposure.")
+                        logger.info(f"[{current_latest_time}] Portfolio Adjustment -> Downscaling long position exposure to target: {target_volume}.")
                         MT.close_market_positions(symbol, side_to_close="buy")
                         time.sleep(0.5)
                         MT.open_market_position(symbol=symbol, order_type="buy", volume=target_volume)
@@ -147,19 +170,21 @@ def live(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = 
             elif signal == -1:
                 # Continuous Reversal: Clean up conflicting long exposure first
                 if stats.get("buy_lots", 0.0) > 0:
+                    logger.info(f"[{current_latest_time}] Continuous Reversal -> Closing long before short entry.")
                     MT.close_market_positions(symbol, side_to_close="buy")
                     stats["buy_lots"] = 0.0
 
                     # Allocation Management: Route entry, scale-up, or scale-down orders
                     if stats.get("sell_lots", 0.0) == 0:
-                        print(f"[{current_latest_time}] Execution Event -> Opening new Short trade.")
+                        logger.info(f"[{current_latest_time}] Execution Event -> Opening new Short trade.")
                         MT.open_market_position(symbol=symbol, order_type="sell", volume=target_volume)
                     elif stats["sell_lots"] < target_volume:
                         needed_vol = round(target_volume - stats["sell_lots"], 2)
                         if needed_vol >= 0.01:
+                            logger.info(f"[{current_latest_time}] Allocation Management -> Scaling up Short exposure by {needed_vol} lots.")
                             MT.open_market_position(symbol=symbol, order_type="sell", volume=needed_vol)
                     elif stats["sell_lots"] > target_volume:
-                        print(f"[{current_latest_time}] Portfolio Adjustment -> Downscaling short position exposure.")
+                        logger.info(f"[{current_latest_time}] Portfolio Adjustment -> Downscaling short position exposure to target: {target_volume}.")
                         MT.close_market_positions(symbol, side_to_close="sell")
                         time.sleep(0.5)
                         MT.open_market_position(symbol=symbol, order_type="sell", volume=target_volume)
@@ -167,12 +192,12 @@ def live(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = 
                 time.sleep(1)  # General loop breathing space to keep connection thread stable
 
     except KeyboardInterrupt:
-        print("\nStopping live execution script cleanly via user command...")
+        logger.info("Stopping live execution script cleanly via user command...")
     except Exception as e:
-        print(f"\n[Unexpected Core Failure] An unhandled exception forced loop crash: {str(e)}")
+        logger.critical(f"An unhandled exception forced loop crash: {str(e)}", exc_info=True)
     finally:
         # Secure terminal disconnection cleanup
-        print("Releasing terminal interface resources...")
+        logger.info("Releasing terminal interface resources...")
         mt5.shutdown()
     return 1
 

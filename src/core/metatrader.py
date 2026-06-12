@@ -1,6 +1,25 @@
-import time
 import MetaTrader5 as mt5
 import pandas as pd
+import logging
+from datetime import datetime
+
+# Initialize file system workspace directories dynamically
+LOG_DIR = "logs"
+os.makedirs(LOG_DIR, exist_ok=True)
+
+# Generate a cleanly tracked log file footprint for this specific core session instance
+log_filename = os.path.join(LOG_DIR, f"terminal_execution_{datetime.now().strftime('%Y%m%d')}.log")
+
+# Setup the system configuration parameters (Ensuring no default console print streaming occurs)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] [%(funcName)s] %(message)s",
+    handlers=[
+        logging.FileHandler(log_filename, encoding="utf-8")
+    ]
+)
+logger = logging.getLogger("mt5_core_logger")
+
 
 def update_candle_dataframe(df, symbol, timeframe, n_max):
     """
@@ -29,7 +48,7 @@ def update_candle_dataframe(df, symbol, timeframe, n_max):
 
         # Handle terminal connection drops or missing market feed assets defensively
         if rates is None or len(rates) == 0:
-            print(f"[Warning] Failed to fetch current rates for {symbol}. MT5 Error: {mt5.last_error()}")
+            logger.warning(f"Failed to fetch current rates for {symbol}. MT5 Error: {mt5.last_error()}")
             return 0
 
         # Parse numerical timestamp into a standard datetime object
@@ -40,7 +59,7 @@ def update_candle_dataframe(df, symbol, timeframe, n_max):
         if df is None or df.empty:
             initial_rates = mt5.copy_rates_from_pos(symbol, timeframe, 1, n_max)
             if initial_rates is None or len(initial_rates) == 0:
-                print(f"[Error] Initialization failed. Cannot warmup history for {symbol}.")
+                logger.error(f"Initialization failed. Cannot warmup history for {symbol}.")
                 return 0
 
             df = pd.DataFrame(initial_rates)
@@ -48,10 +67,11 @@ def update_candle_dataframe(df, symbol, timeframe, n_max):
 
             # Guard against structural metadata adjustments by the broker platform
             if not set(required_columns).issubset(df.columns):
-                print(f"[Error] Unexpected data format returned from MT5 for symbol: {symbol}")
+                logger.error(f"Unexpected data format returned from MT5 for symbol: {symbol}")
                 return 0
 
             df = df[required_columns]
+            logger.info(f"Successful cold warmup historical data frame for asset: {symbol}")
             return df
 
         # Real-Time Append: Push the newest candle row if the bar interval timestamp has progressed
@@ -65,10 +85,12 @@ def update_candle_dataframe(df, symbol, timeframe, n_max):
             if len(df) > n_max:
                 df = df.iloc[-n_max:].reset_index(drop=True)
 
+            logger.info(f"New closed candle appended for {symbol} at timestamp: {new_candle_time}")
+
         return df
 
     except Exception as e:
-        print(f"[Critical Exception] Failed updating dataframe for {symbol}: {str(e)}")
+        logger.critical(f"Failed updating dataframe for {symbol}: {str(e)}")
         return 0
 
 def get_account_balance():
@@ -85,11 +107,11 @@ def get_account_balance():
     try:
         account_info = mt5.account_info()
         if account_info is None:
-            print(f"[Error] Could not fetch account info. Terminal disconnected. Code: {mt5.last_error()}")
+            logger.error(f"Could not fetch account info. Terminal disconnected. Code: {mt5.last_error()}")
             return None
         return account_info.balance
     except Exception as e:
-        print(f"[Exception] Error reading account metrics data: {str(e)}")
+        logger.critical(f"Error reading account metrics data: {str(e)}")
         return None
 
 def get_positions_summary(symbol):
@@ -116,7 +138,7 @@ def get_positions_summary(symbol):
         if positions is None:
             err_code = mt5.last_error()
             if err_code != mt5.RES_穩_OK:  # Filter genuine communication crashes
-                print(f"[Error] Terminal communication broken for {symbol}. Code: {err_code}")
+                logger.error(f"Terminal communication broken for {symbol}. Code: {err_code}")
             return summary
 
         # Separate total volumetric and item values into execution vectors
@@ -134,7 +156,7 @@ def get_positions_summary(symbol):
         return summary
 
     except Exception as e:
-        print(f"[Exception] Failed compiling open position summary profiles for {symbol}: {str(e)}")
+        logger.critical(f"Failed compiling open position summary profiles for {symbol}: {str(e)}")
         return summary
 
 def close_market_positions(symbol, side_to_close="all"):
@@ -157,7 +179,7 @@ def close_market_positions(symbol, side_to_close="all"):
         positions = mt5.positions_get(symbol=symbol)
 
         if positions is None:
-            print(f"[Error] Failed to read open data records to liquidate. Code: {mt5.last_error()}")
+            logger.error(f"Failed to read open data records to liquidate. Code: {mt5.last_error()}")
             return False
 
         if len(positions) == 0:
@@ -176,7 +198,7 @@ def close_market_positions(symbol, side_to_close="all"):
             # Refresh pricing info to maximize fill execution accuracy
             tick = mt5.symbol_info_tick(symbol)
             if tick is None:
-                print(f"[Error] Liquidation price snapshot dropped for {symbol}. Skipping ticket #{pos.ticket}")
+                logger.error(f"Liquidation price snapshot dropped for {symbol}. Skipping ticket #{pos.ticket}")
                 all_successful = False
                 continue
 
@@ -210,23 +232,21 @@ def close_market_positions(symbol, side_to_close="all"):
 
             # Defensive Check: Handle total connection or communication losses during dispatch
             if result is None:
-                print(
-                    f"[Critical] Order routing failed entirely for close out ticket #{pos.ticket}. Code: {mt5.last_error()}")
+                logger.error(f"Order routing failed entirely for close out ticket #{pos.ticket}. Code: {mt5.last_error()}")
                 all_successful = False
                 continue
 
             # Confirm settlement feedback codes are correct
             if result.retcode != mt5.TRADE_RETCODE_DONE:
-                print(
-                    f"[Reject] Broker denied close order #{pos.ticket}. Reason: {result.comment} (Code: {result.retcode})")
+                logger.error(f"Broker denied close order #{pos.ticket}. Reason: {result.comment} (Code: {result.retcode})")
                 all_successful = False
             else:
-                print(f"Successfully closed position #{pos.ticket} ({pos.volume} lots)")
+                logger.info(f"Successfully closed position #{pos.ticket} ({pos.volume} lots)")
 
         return all_successful
 
     except Exception as e:
-        print(f"[Critical Exception] Position liquidation process failed completely for {symbol}: {str(e)}")
+        logger.critical(f"Position liquidation process failed completely for {symbol}: {str(e)}")
         return False
 
 def open_market_position(symbol, order_type, volume, deviation=20, magic=0):
@@ -257,7 +277,7 @@ def open_market_position(symbol, order_type, volume, deviation=20, magic=0):
         # Synchronize fast real-time ticking values
         tick = mt5.symbol_info_tick(symbol)
         if tick is None:
-            print(f"[Error] Real-time market tick pricing stream missing for {symbol}. Code: {mt5.last_error()}")
+            logger.error(f"Real-time market tick pricing stream missing for {symbol}. Code: {mt5.last_error()}")
             return None
 
         # Structural Routing: Match trade directions to corresponding order book limits
@@ -268,7 +288,7 @@ def open_market_position(symbol, order_type, volume, deviation=20, magic=0):
             mt5_order_type = mt5.ORDER_TYPE_SELL
             price = tick.bid
         else:
-            print(f"[Error] Invalid order side parameter string passed: '{order_type}'")
+            logger.error(f"Invalid order side parameter string passed: '{order_type}'")
             return None
 
         # Construct execution transaction specifications payload
@@ -290,17 +310,17 @@ def open_market_position(symbol, order_type, volume, deviation=20, magic=0):
 
         # Defensive Check: Secure module from crashing on server connection timeouts
         if result is None:
-            print(f"[Critical] Request dropped silently by network routing layer. Code: {mt5.last_error()}")
+            logger.error(f"Request dropped silently by network routing layer. Code: {mt5.last_error()}")
             return None
 
         # Check broker processing status codes before confirming trade locally
         if result.retcode != mt5.TRADE_RETCODE_DONE:
-            print(f"[Execution Rejected] Broker rejected trade deal entry. Code: {result.retcode} ({result.comment})")
+            logger.error(f"Broker rejected trade deal entry. Code: {result.retcode} ({result.comment})")
         else:
-            print(f"Successfully opened {direction.upper()} | Ticket #{result.order} | Lots: {volume}")
+            logger.info(f"Successfully opened {direction.upper()} | Ticket #{result.order} | Lots: {volume}")
 
         return result
 
     except Exception as e:
-        print(f"[Critical Exception] Trade setup execution pipeline broke unexpectedly: {str(e)}")
+        logger.critical(f"Trade setup execution pipeline broke unexpectedly: {str(e)}")
         return None

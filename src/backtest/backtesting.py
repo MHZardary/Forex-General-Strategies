@@ -4,7 +4,24 @@ from tqdm import tqdm
 from src.strategies import Strategy
 import matplotlib.pyplot as plt
 import os
+import logging
+from datetime import datetime
 
+# Initialize file structure configurations for diagnostics
+LOG_DIR = "logs"
+os.makedirs(LOG_DIR, exist_ok=True)
+# Generate a uniquely timestamped log file filename per session
+log_filename = os.path.join(LOG_DIR, f"backtest_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+
+# Setup the logging framework hierarchy (Disables root print echoing automatically)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler(log_filename, encoding="utf-8")
+    ]
+)
+logger = logging.getLogger("backtester_logger")
 
 def data_loader(symbol: str = 'EURUSD', time_frame: str = '1m')-> pd.DataFrame:
     """
@@ -26,14 +43,16 @@ def data_loader(symbol: str = 'EURUSD', time_frame: str = '1m')-> pd.DataFrame:
     file_name = f"{symbol}_{time_frame}.csv"
     path = os.path.join("data", "raw", file_name)
 
+    logger.info(f"Initiating data ingestion pipeline for file: {path}")
+
     # Import MT5 exported data using standard tab-separated formatting
     try:
         df = pd.read_csv(path, sep="\t")
     except FileNotFoundError:
-        print(f"[Error] Historical data source file not found at: {path}")
+        logger.error(f"Historical data source file not found at path location: {path}")
         return pd.DataFrame()
     except Exception as e:
-        print(f"[Error] Failed to read data stream from {path}: {str(e)}")
+        logger.error(f"Failed to read data stream from storage file {path}: {str(e)}")
         return pd.DataFrame()
 
     # Clean header metadata brackets safely
@@ -42,7 +61,7 @@ def data_loader(symbol: str = 'EURUSD', time_frame: str = '1m')-> pd.DataFrame:
     # Validate that all primary required columns are fully present in the source matrix
     required_cols = {'DATE', 'TIME', 'OPEN', 'HIGH', 'LOW', 'CLOSE'}
     if not required_cols.issubset(df.columns):
-        print(f"[Error] Source dataset columns at {path} are missing required MT5 headers.")
+        logger.error(f"Source dataset columns at {path} are missing required standard MT5 headers.")
         return pd.DataFrame()
 
     # Map raw headers to lowercase standard notation
@@ -68,47 +87,49 @@ def data_loader(symbol: str = 'EURUSD', time_frame: str = '1m')-> pd.DataFrame:
         print(f"[Error] Datetime parsing conversion failed for {symbol}: {str(e)}")
         return pd.DataFrame()
 
+    logger.info(f"Successfully loaded and standardized {len(df)} records for asset {symbol}.")
     return df
 
 def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = '1m'):
     """
-        Simulates trading historical performance over historical time-series datasets.
+    Simulates trading historical performance over historical time-series datasets.
 
-        Parameters:
-        -----------
-        strategy : Strategy.Strategy
-            An instance of the trading strategy logic defining min_bars_required and calculate_signal.
-        symbol : str, optional
-            The financial ticker asset symbol (default is 'EURUSD').
-        time_frame : str, optional
-            The candlestick timeline bar interval length (default is '1m').
+    Parameters:
+    -----------
+    strategy : Strategy.Strategy
+        An instance of the trading strategy logic defining min_bars_required and calculate_signal.
+    symbol : str, optional
+        The financial ticker asset symbol (default is 'EURUSD').
+    time_frame : str, optional
+        The candlestick timeline bar interval length (default is '1m').
 
-        Returns:
-        --------
-        dict
-            A summary dictionary containing evaluation statistics (ROI, CAGR, Sharpe, Sortino ratios),
-            raw data logs, and performance visualization figures.
-        """
-
+    Returns:
+    --------
+    dict
+        A summary dictionary containing evaluation statistics (ROI, CAGR, Sharpe, Sortino ratios),
+        raw data logs, and performance visualization figures.
+    """
+    logger.info(f"Initializing simulation backtest engine routine for Symbol: {symbol} ({time_frame})")
     back_test_results = {'symbol': symbol, 'time frame': time_frame, 'Financial data': pd.DataFrame()}
 
     # Ingest full historical series
     df = data_loader(symbol, time_frame)
     if df.empty:
-        print(f"[Aborting] Empty dataset returned for {symbol}. Cancelling backtest.")
+        logger.error(f"Empty dataset returned for asset context {symbol}. Cancelling backtest.")
         return back_test_results
 
     back_test_results['Financial data'] = df
 
     # Guard Condition: Ensure database context size satisfies lookback requirements
     if len(df) <= strategy.min_bars_required:
-        print(f"[Aborting] Data length ({len(df)}) is insufficient for lookback window ({strategy.min_bars_required}).")
+        logger.error(f"Data length ({len(df)}) is insufficient for strategy lookback requirement window ({strategy.min_bars_required}).")
         return back_test_results
 
     current_position = 0
     long_price = []
     short_price = []
 
+    logger.info("Chronological historical processing tracking started...")
     # Historical chronological simulation window iteration loop
     for i in tqdm(range(len(df)-strategy.min_bars_required)):
 
@@ -129,11 +150,13 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
                 # Close out open active long position array row
                 if len(long_price) > 0:
                     long_price[-1][-1] = [current_close, dt]
+                logger.info(f"[{dt}] Logic Execution -> Long Closed out at price: {current_close}")
                 current_position = 0
 
                 # Continuous Reversal: Instantly enter opposite short asset state
                 if strategy.is_continuous and signal == -1:
                     short_price.append([[current_close, dt], None])
+                    logger.info(f"[{dt}] Reversal Triggered -> Immediate Short entry at price: {current_close}")
                     current_position = -1
 
         # Short state execution management logic
@@ -142,26 +165,32 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
                 # Close out open active short position array row
                 if len(short_price) > 0:
                     short_price[-1][-1] = [current_close, dt]
-                    current_position = 0
+                logger.info(f"[{dt}] Logic Execution -> Short Closed out at price: {current_close}")
+                current_position = 0
 
                 # Continuous Reversal: Instantly enter opposite long asset state
                 if strategy.is_continuous and signal == 1:
                     long_price.append([[current_close, dt], None])
+                    logger.info(f"[{dt}] Reversal Triggered -> Immediate Long entry at price: {current_close}")
                     current_position = 1
 
             # Flat structural execution condition rules
         else:
             if signal == 1:
                 long_price.append([[current_close, dt], None])
+                logger.info(f"[{dt}] Execution Entry -> Long Triggered at price: {current_close}")
                 current_position = 1
             elif signal == -1:
                 short_price.append([[current_close, dt], None])
+                logger.info(f"[{dt}] Execution Entry -> Short Triggered at price: {current_close}")
                 current_position = -1
 
     # Clean up unclosed trailing positions at the terminal edge of the dataset
     if len(short_price) > 0 and short_price[-1][1] is None:
+        logger.info("Trimming unclosed trailing sell position at endpoint edge.")
         short_price = short_price[:-1]
     if len(long_price) > 0 and long_price[-1][1] is None:
+        logger.info("Trimming unclosed trailing buy position at endpoint edge.")
         long_price = long_price[:-1]
 
 
@@ -194,6 +223,7 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
 
     # Fallback exit condition for dead asset data feeds
     if df_trades.empty:
+        logger.warning(f"Strategy did not populate any execution signal flags for ticker context: {symbol}.")
         return back_test_results
 
     # Order positions chronologically by execution entry timestamp
@@ -290,6 +320,7 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
         back_test_results['base_sortino'] = 0.0
         back_test_results['annualized_sortino'] = 0.0
 
+    logger.info(f"Backtest process terminated smoothly for symbol: {symbol}. Data tracked to summary structure objects.")
     return back_test_results
 
 def back_tester_results(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = '1m'):
