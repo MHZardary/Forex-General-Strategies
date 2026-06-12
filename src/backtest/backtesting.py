@@ -335,7 +335,7 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
 
         # Hit Rate and Win Rate Metric Extractions
         winning_trades = df_trades[df_trades['profit'] > 0]
-        losing_trades = df_trades[df_trades['profit'] < 0]
+        losing_trades = df_trades[df_trades['profit'] <= 0]
         total_trades_count = len(df_trades)
 
         raw_hit_rate = len(winning_trades) / total_trades_count if total_trades_count > 0 else 0.0
@@ -433,7 +433,7 @@ def back_tester_results(strategy: Strategy.Strategy, symbol: str = 'EURUSD', tim
         print(f"Maximum Drawdown:          {results.get('max_drawdown', 0.0):.2f}%")
         print(f"System Hit Rate:           {results.get('hit_rate', 0.0):.1f}%")
         print(f"System Win Rate:           {results.get('win_rate', 0.0):.1f}%")
-        print(f"Expectancy (Avg R-$):      {results.get('expectancy', 0.0):.2f}")
+        print(f"Expectancy (Avg R-$):      {results.get('expectancy', 0.0):.6f}")
         print(f"Annual Turnover Rate:      {results.get('turnover', 0.0):.1f} trades/yr")
         print("-" * 50)
         print(f"Backtest Horizon:          {results.get('time span', 0.0):.2f} years")

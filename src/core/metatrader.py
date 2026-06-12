@@ -2,6 +2,7 @@ import MetaTrader5 as mt5
 import pandas as pd
 import logging
 from datetime import datetime
+import os
 
 # Initialize file system workspace directories dynamically
 LOG_DIR = "logs"
@@ -20,6 +21,68 @@ logging.basicConfig(
 )
 logger = logging.getLogger("mt5_core_logger")
 
+
+def get_mt5_timeframe(time_frame_str: str) -> int:
+    """
+    Maps standard string representations of timeframes to official MetaTrader 5 constants.
+
+    Parameters:
+    -----------
+    time_frame_str : str
+        The timeframe string (e.g., '1m', '5m', '1h', '1d').
+
+    Returns:
+    --------
+    int
+        The corresponding MT5 timeframe constant integer.
+
+    Raises:
+    -------
+    ValueError
+        If an unsupported timeframe string format is provided.
+    """
+    # Clean the input string (lowercase and remove spaces)
+    tf_clean = time_frame_str.strip().lower()
+
+    # Dictionary mapping famous standard strings to MT5 constants
+    timeframe_map = {
+        # Minute Timeframes
+        '1m': mt5.TIMEFRAME_M1,
+        '2m': mt5.TIMEFRAME_M2,
+        '3m': mt5.TIMEFRAME_M3,
+        '4m': mt5.TIMEFRAME_M4,
+        '5m': mt5.TIMEFRAME_M5,
+        '6m': mt5.TIMEFRAME_M6,
+        '10m': mt5.TIMEFRAME_M10,
+        '12m': mt5.TIMEFRAME_M12,
+        '15m': mt5.TIMEFRAME_M15,
+        '20m': mt5.TIMEFRAME_M20,
+        '30m': mt5.TIMEFRAME_M30,
+
+        # Hourly Timeframes
+        '1h': mt5.TIMEFRAME_H1,
+        '2h': mt5.TIMEFRAME_H2,
+        '3h': mt5.TIMEFRAME_H3,
+        '4h': mt5.TIMEFRAME_H4,
+        '6h': mt5.TIMEFRAME_H6,
+        '8h': mt5.TIMEFRAME_H8,
+        '12h': mt5.TIMEFRAME_H12,
+
+        # Daily, Weekly & Monthly Timeframes
+        '1d': mt5.TIMEFRAME_D1,
+        'd1': mt5.TIMEFRAME_D1,
+        '1w': mt5.TIMEFRAME_W1,
+        'w1': mt5.TIMEFRAME_W1,
+        '1M': mt5.TIMEFRAME_MN1,
+    }
+
+    if tf_clean in timeframe_map:
+        return timeframe_map[tf_clean]
+    else:
+        raise ValueError(
+            f"Unsupported timeframe: '{time_frame_str}'. "
+            f"Please use standard formats like: {list(timeframe_map.keys())[:10]}..."
+        )
 
 def update_candle_dataframe(df, symbol, timeframe, n_max):
     """
@@ -43,6 +106,7 @@ def update_candle_dataframe(df, symbol, timeframe, n_max):
         or 0 if the data fetch fails.
     """
     try:
+        timeframe = get_mt5_timeframe(timeframe)
         # Fetch index 0 (the currently forming live candle) to read the active time horizon
         live_rate = mt5.copy_rates_from_pos(symbol, timeframe, 0, 1)
 
