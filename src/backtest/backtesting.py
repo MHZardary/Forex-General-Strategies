@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from src.strategies import Strategy
@@ -184,26 +185,59 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
 
     # 3. Define an initial account balance to ground the compounding math
     initial_balance = 100.0
-    ending_balance = initial_balance + sum_profits
+    ending_balance = initial_balance + back_test_results['total income']
 
-    # 4. Handle safety edge cases (e.g., zero years or catastrophic losses)
     if years > 0 and ending_balance > 0:
         cagr = (ending_balance / initial_balance) ** (1 / years) - 1
-        cagr_percentage = cagr * 100
-        back_test_results['cagr'] = cagr_percentage
+        back_test_results['cagr'] = cagr * 100
         back_test_results['time span'] = years
         back_test_results['back test time start'] = earliest_date
         back_test_results['back test time end'] = latest_trade_date
+
+        # =========================================================
+        # SHARPE RATIO COMPUTATION CORE
+        # =========================================================
+        # Calculate fractional percentage return per individual trade transaction
+        df_trades['return_pct'] = (df_trades['exit_price'] - df_trades['entry_price']) * df_trades['direction'] / \
+                                  df_trades['entry_price']
+
+        avg_trade_return = df_trades['return_pct'].mean()
+        std_trade_return = df_trades['return_pct'].std()
+
+        if std_trade_return > 0:
+            # Base Trade Sharpe (Assumes risk_free_rate = 0.0)
+            base_sharpe = avg_trade_return / std_trade_return
+
+            # Annualization scaling factor calculations
+            trades_per_year = len(df_trades) / years
+            annualized_sharpe = base_sharpe * np.sqrt(trades_per_year)
+
+            back_test_results['base_sharpe'] = base_sharpe
+            back_test_results['annualized_sharpe'] = annualized_sharpe
+        else:
+            back_test_results['base_sharpe'] = 0.0
+            back_test_results['annualized_sharpe'] = 0.0
+    else:
+        back_test_results['cagr'] = 0.0
+        back_test_results['time span'] = years
+        back_test_results['base_sharpe'] = 0.0
+        back_test_results['annualized_sharpe'] = 0.0
 
     return back_test_results
 
 def back_tester_results(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = '1m'):
     results = back_tester(strategy, symbol, time_frame)
     if results['Trades data'].empty:
-        print('Seems this strategy not generated any signals, for accurate inspection, checking logs is highly recommended')
+        print(
+            'Seems this strategy not generated any signals, for accurate inspection, checking logs is highly recommended')
     else:
-        print(f'Profit factor: {results['profit factor']}')
-        print(f'ROI is: {results['roi']:.1f}%')
-        print(f'Backtest Horizon: {results['time span']} years ({results['back test time start']} to {results['back test time end']})')
-        print(f"CAGR: {results['cagr']:.2f}%")
+        print("\n" + "=" * 50 + "\nBACKTEST PERFORMANCE SUMMARY\n" + "=" * 50)
+        print(f"Profit factor:             {results['profit factor']:.2f}")
+        print(f"ROI is:                    {results['roi']:.1f}%")
+        print(f"Backtest Horizon:          {results['time span']:.2f} years")
+        print(f"Timeline Window:           {results['back test time start']} to {results['back test time end']}")
+        print(f"CAGR:                      {results['cagr']:.2f}%")
+        print(f"Base Sharpe (Per-Trade):   {results.get('base_sharpe', 0.0):.3f}")
+        print(f"Annualized Sharpe Ratio:   {results.get('annualized_sharpe', 0.0):.3f}")
+        print("=" * 50 + "\n")
         results['profit to time chart'].show()
