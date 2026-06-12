@@ -140,9 +140,9 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
     profit_factor = sum_profits / sum_loss
 
     back_test_results['profit factor'] = profit_factor
-    back_test_results['total income'] = sum_profits
+    back_test_results['total income'] = sum_profits - sum_loss
 
-    roi = sum_profits * 10
+    roi = back_test_results['total income'] * 10
     back_test_results['roi'] = roi
 
     plt.figure(figsize=(12, 6))
@@ -217,11 +217,27 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
         else:
             back_test_results['base_sharpe'] = 0.0
             back_test_results['annualized_sharpe'] = 0.0
+
+        # Sortino Calculation (Filter out everything above 0 to isolate downside volatility)
+        downside_returns = df_trades['return_pct'].copy()
+        downside_returns[downside_returns > 0] = 0  # Replace positive gains with 0
+
+        # Compute Downside Deviation
+        std_downside_return = np.sqrt(np.mean(downside_returns ** 2))
+        if std_downside_return > 0:
+            base_sortino = avg_trade_return / std_downside_return
+            back_test_results['base_sortino'] = base_sortino
+            back_test_results['annualized_sortino'] = base_sortino * np.sqrt(trades_per_year)
+        else:
+            back_test_results['base_sortino'] = 0.0
+            back_test_results['annualized_sortino'] = 0.0
     else:
         back_test_results['cagr'] = 0.0
         back_test_results['time span'] = years
         back_test_results['base_sharpe'] = 0.0
         back_test_results['annualized_sharpe'] = 0.0
+        back_test_results['base_sortino'] = 0.0
+        back_test_results['annualized_sortino'] = 0.0
 
     return back_test_results
 
@@ -239,5 +255,7 @@ def back_tester_results(strategy: Strategy.Strategy, symbol: str = 'EURUSD', tim
         print(f"CAGR:                      {results['cagr']:.2f}%")
         print(f"Base Sharpe (Per-Trade):   {results.get('base_sharpe', 0.0):.3f}")
         print(f"Annualized Sharpe Ratio:   {results.get('annualized_sharpe', 0.0):.3f}")
+        print(f"Base Sortino (Per-Trade):  {results.get('base_sortino', 0.0):.3f}")
+        print(f"Annualized Sortino Ratio:  {results.get('annualized_sortino', 0.0):.3f}")
         print("=" * 50 + "\n")
         results['profit to time chart'].show()

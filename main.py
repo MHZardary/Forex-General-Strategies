@@ -2,7 +2,6 @@
 # Todo: Error handling
 # Todo: logging
 # Todo: Define more criterias
-# Todo: Calculate sortino ratio
 
 from src.backtest import backtesting as BT
 from src.strategies import MACrossover as MACr
