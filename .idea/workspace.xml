@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="3511ee1c-d282-4b76-a4b7-7db3f82d1f43" name="Changes" comment="Successfully implemented OOD structure for the strategies enhancing scaleability of the program.">
+    <list default="true" id="3511ee1c-d282-4b76-a4b7-7db3f82d1f43" name="Changes" comment="CAGR Implemented">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/backtest/backtesting.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/backtest/backtesting.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/LiveTrade.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/LiveTrade.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/strategies/MACrossover.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/strategies/MACrossover.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/strategies/Strategy.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/strategies/Strategy.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,6 +63,33 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RunManager">
+    <configuration name="main" type="PythonConfigurationType" factoryName="Python">
+      <module name="Forex-General-Strategies" />
+      <option name="ENV_FILES" value="" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="SDK_NAME" value="Python 3.14 (PythonProject)" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="RUN_TOOL" value="" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+      <option name="REDIRECT_INPUT" value="false" />
+      <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+  </component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -164,7 +195,23 @@
       <option name="project" value="LOCAL" />
       <updated>1781212819840</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="CAGR Implemented">
+      <option name="closed" value="true" />
+      <created>1781213562144</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1781213562144</updated>
+    </task>
+    <task id="LOCAL-00013" summary="CAGR Implemented">
+      <option name="closed" value="true" />
+      <created>1781214090890</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1781214090890</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -192,11 +239,12 @@
     <MESSAGE value="Profit Factor (sum of profits to absolute sum of loss) calculation added." />
     <MESSAGE value="ROI (Return On Investment) calculation added." />
     <MESSAGE value="Successfully implemented OOD structure for the strategies enhancing scaleability of the program." />
-    <option name="LAST_COMMIT_MESSAGE" value="Successfully implemented OOD structure for the strategies enhancing scaleability of the program." />
+    <MESSAGE value="CAGR Implemented" />
+    <option name="LAST_COMMIT_MESSAGE" value="CAGR Implemented" />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Forex_General_Strategies$backtesting.coverage" NAME="backtesting Coverage Results" MODIFIED="1781213206453" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/backtest" />
-    <SUITE FILE_PATH="coverage/Forex_General_Strategies$main.coverage" NAME="main Coverage Results" MODIFIED="1781213229538" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Forex_General_Strategies$backtesting.coverage" NAME="backtesting Coverage Results" MODIFIED="1781258933987" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/backtest" />
+    <SUITE FILE_PATH="coverage/Forex_General_Strategies$main.coverage" NAME="main Coverage Results" MODIFIED="1781258951314" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$plots.coverage" NAME="plots Coverage Results" MODIFIED="1780751219051" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/visualization" />
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$MACrossover_BT.coverage" NAME="MACrossover_BT Coverage Results" MODIFIED="1780954288438" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/backtest" />
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$MACrossover.coverage" NAME="MACrossover Coverage Results" MODIFIED="1780869662943" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/strategies" />
