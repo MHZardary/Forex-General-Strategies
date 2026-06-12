@@ -1,6 +1,3 @@
-# Todo: logging
-# Todo: Define more criterias
-
 from src.backtest import backtesting as BT
 from src.strategies import MACrossover as MACr
 

@@ -92,22 +92,53 @@ def data_loader(symbol: str = 'EURUSD', time_frame: str = '1m')-> pd.DataFrame:
 
 def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = '1m'):
     """
-    Simulates trading historical performance over historical time-series datasets.
+    Simulates historical trading performance over time-series datasets and calculates
+    advanced portfolio risk, frequency, and statistical expectancy metrics.
 
     Parameters:
     -----------
     strategy : Strategy.Strategy
-        An instance of the trading strategy logic defining min_bars_required and calculate_signal.
+        An instance of the trading strategy logic defining min_bars_required,
+        calculate_signal, and execution continuity types.
     symbol : str, optional
-        The financial ticker asset symbol (default is 'EURUSD').
+        The financial ticker asset symbol to load from local storage streams
+        (default is 'EURUSD').
     time_frame : str, optional
-        The candlestick timeline bar interval length (default is '1m').
+        The candlestick timeline bar interval length matching raw files
+        (default is '1m').
 
     Returns:
     --------
     dict
-        A summary dictionary containing evaluation statistics (ROI, CAGR, Sharpe, Sortino ratios),
-        raw data logs, and performance visualization figures.
+        A comprehensive summary dictionary populated with execution records, performance
+        visualizations, and advanced quantitative risk attributes:
+
+        - 'symbol' (str): Asset identifier ticker string.
+        - 'time frame' (str): Core operational bar horizon.
+        - 'Financial data' (pd.DataFrame): The fully cleaned, standardized source market feed.
+        - 'Trades data' (pd.DataFrame): Chronological transactional summary matrix tracking
+          entry/exit timestamps, filled execution prices, directions, and equity steps.
+        - 'time span' (float): The total fraction of historical test years simulated.
+        - 'back test time start' (pd.Timestamp): Date-timestamp coordinate of the initial bar.
+        - 'back test time end' (pd.Timestamp): Closing timestamp of the last processed position.
+        - 'max_drawdown' (float): Peak-to-trough absolute risk percentage evaluated across
+          the entire equity timeline, including initial capital baseline thresholds.
+        - 'hit_rate' (float): Frequency percentage ratio of net-profitable closed trades.
+        - 'win_rate' (float): Volumetric percentage ratio comparing gross monetary winning volume
+          directly against total absolute dollar variances across all trades.
+        - 'expectancy' (float): The mathematical profit expectancy value (R-multiple)
+          generated per standard execution round.
+        - 'turnover' (float): Annualized frequency density indicating total trades filled per year.
+        - 'profit factor' (float): Absolute gross payout ratio of aggregate wins over aggregate losses.
+        - 'total income' (float): Absolute net currency performance balance variation.
+        - 'roi' (float): Return on investment percentage expansion calculated from inception base.
+        - 'cagr' (float): Compounded Annual Growth Rate adjusting for simulated test duration.
+        - 'base_sharpe' / 'annualized_sharpe' (float): Risk-adjusted reward metrics measuring returns
+          per unit of portfolio standard deviation volatility.
+        - 'base_sortino' / 'annualized_sortino' (float): Risk-adjusted reward metrics tracking excess
+          performance solely against negative downside tracking variances.
+        - 'profit to time chart' (matplotlib.pyplot): Multi-layered transactional and accumulated equity
+          curve progression layout model.
     """
     logger.info(f"Initializing simulation backtest engine routine for Symbol: {symbol} ({time_frame})")
     back_test_results = {'symbol': symbol, 'time frame': time_frame, 'Financial data': pd.DataFrame()}
@@ -234,6 +265,7 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
     df_trades['price_change'] = df_trades['exit_price'] - df_trades['entry_price']
     df_trades['profit'] = df_trades['price_change'] * df_trades['direction'] * 10
     df_trades["cum_profit"] = df_trades["profit"].cumsum()
+    df_trades["equity"] = initial_balance + df_trades["cum_profit"]
 
     # Performance Matrix: Compute total gross returns vs losses
     sum_profits = sum(df_trades[df_trades['profit'] > 0]['profit'].tolist())
@@ -283,6 +315,49 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
         back_test_results['time span'] = years
         back_test_results['back test time start'] = earliest_date
         back_test_results['back test time end'] = latest_trade_date
+
+        # Maximum Drawdown Calculation (Peak-to-Trough)
+        equity_series = df_trades["equity"].tolist()
+        # Prepend initial balance to evaluate drawdown profile from inception point
+        full_equity_curve = [initial_balance] + equity_series
+
+        running_peak = full_equity_curve[0]
+        max_drawdown = 0.0
+
+        for eq_value in full_equity_curve:
+            if eq_value > running_peak:
+                running_peak = eq_value
+            dd = (running_peak - eq_value) / running_peak
+            if dd > max_drawdown:
+                max_drawdown = dd
+
+        back_test_results['max_drawdown'] = max_drawdown * 100
+
+        # Hit Rate and Win Rate Metric Extractions
+        winning_trades = df_trades[df_trades['profit'] > 0]
+        losing_trades = df_trades[df_trades['profit'] < 0]
+        total_trades_count = len(df_trades)
+
+        hit_rate = len(winning_trades) / total_trades_count if total_trades_count > 0 else 0.0
+        back_test_results['hit_rate'] = hit_rate * 100
+
+        sum_profits = winning_trades['profit'].sum()
+        sum_losses = abs(losing_trades['profit'].sum())
+
+        win_rate = (sum_profits / (sum_profits + sum_losses)) * 100 if (sum_profits + sum_losses) > 0 else 0.0
+        back_test_results['win_rate'] = win_rate
+
+        # Mathematical System Expectancy (R) Calculation
+        avg_win = winning_trades['profit'].mean() if len(winning_trades) > 0 else 0.0
+        avg_loss = abs(losing_trades['profit'].mean()) if len(losing_trades) > 0 else 0.0
+        probability_loss = 1.0 - hit_rate
+
+        expectancy = (hit_rate * avg_win) - (probability_loss * avg_loss)
+        back_test_results['expectancy'] = expectancy
+
+        # Strategy Equity Turnover Rate (Annualized Execution Density)
+        turnover = total_trades_count / years if years > 0 else 0.0
+        back_test_results['turnover'] = turnover
 
         # Compute per-trade returns percent arrays
         df_trades['return_pct'] = df_trades['profit'] / initial_balance
@@ -348,18 +423,22 @@ def back_tester_results(strategy: Strategy.Strategy, symbol: str = 'EURUSD', tim
         print('Seems this strategy not generated any signals, for accurate inspection, checking logs is highly recommended')
     else:
         # Format terminal logging performance interface tables
-        print("\n" + "=" * 50 + "\nBACKTEST PERFORMANCE SUMMARY\n" + "=" * 50)
-        print(f"Profit factor:             {results['profit factor']:.2f}")
-        print(f"ROI is:                    {results['roi']:.1f}%")
-        print(f"Backtest Horizon:          {results['time span']:.2f} years")
-        print(f"Timeline Window:           {results['back test time start']} to {results['back test time end']}")
-        print(f"CAGR:                      {results['cagr']:.2f}%")
-        print(f"Base Sharpe (Per-Trade):   {results.get('base_sharpe', 0.0):.3f}")
+        print("\n" + "=" * 50 + "\nPERFORMANCE SUMMARY\n" + "=" * 50)
+        print(f"Profit Factor:             {results.get('profit factor', 0.0):.2f}")
+        print(f"ROI Percentage:            {results.get('roi', 0.0):.1f}%")
+        print(f"CAGR Growth Rate:          {results.get('cagr', 0.0):.2f}%")
+        print(f"Maximum Drawdown:          {results.get('max_drawdown', 0.0):.2f}%")
+        print(f"System Hit Rate:           {results.get('hit_rate', 0.0):.1f}%")
+        print(f"System Win Rate:           {results.get('win_rate', 0.0):.1f}%")
+        print(f"Expectancy (Avg R-$):      {results.get('expectancy', 0.0):.2f}")
+        print(f"Annual Turnover Rate:      {results.get('turnover', 0.0):.1f} trades/yr")
+        print("-" * 50)
+        print(f"Backtest Horizon:          {results.get('time span', 0.0):.2f} years")
+        print(
+            f"Timeline Window:           {results.get('back test time start')} to {results.get('back test time end')}")
         print(f"Annualized Sharpe Ratio:   {results.get('annualized_sharpe', 0.0):.3f}")
-        print(f"Base Sortino (Per-Trade):  {results.get('base_sortino', 0.0):.3f}")
         print(f"Annualized Sortino Ratio:  {results.get('annualized_sortino', 0.0):.3f}")
         print("=" * 50 + "\n")
 
-        # Safely render visualization window if figure buffer object exists
         if 'profit to time chart' in results and results['profit to time chart'] is not None:
             results['profit to time chart'].show()
