@@ -338,8 +338,8 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
         losing_trades = df_trades[df_trades['profit'] < 0]
         total_trades_count = len(df_trades)
 
-        hit_rate = len(winning_trades) / total_trades_count if total_trades_count > 0 else 0.0
-        back_test_results['hit_rate'] = hit_rate * 100
+        raw_hit_rate = len(winning_trades) / total_trades_count if total_trades_count > 0 else 0.0
+        back_test_results['hit_rate'] = raw_hit_rate * 100  # Saved as percentage for display
 
         sum_profits = winning_trades['profit'].sum()
         sum_losses = abs(losing_trades['profit'].sum())
@@ -350,9 +350,12 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
         # Mathematical System Expectancy (R) Calculation
         avg_win = winning_trades['profit'].mean() if len(winning_trades) > 0 else 0.0
         avg_loss = abs(losing_trades['profit'].mean()) if len(losing_trades) > 0 else 0.0
-        probability_loss = 1.0 - hit_rate
 
-        expectancy = (hit_rate * avg_win) - (probability_loss * avg_loss)
+        # Correctly uses the decimal format
+        probability_loss = 1.0 - raw_hit_rate
+
+        # Expectancy now accurately reflects average return per trade
+        expectancy = (raw_hit_rate * avg_win) - (probability_loss * avg_loss)
         back_test_results['expectancy'] = expectancy
 
         # Strategy Equity Turnover Rate (Annualized Execution Density)
