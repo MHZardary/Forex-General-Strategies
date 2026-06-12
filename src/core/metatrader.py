@@ -43,20 +43,20 @@ def update_candle_dataframe(df, symbol, timeframe, n_max):
         or 0 if the data fetch fails.
     """
     try:
-        # Fetch the most recently completed historical candle bar
-        rates = mt5.copy_rates_from_pos(symbol, timeframe, 1, 1)
+        # Fetch index 0 (the currently forming live candle) to read the active time horizon
+        live_rate = mt5.copy_rates_from_pos(symbol, timeframe, 0, 1)
 
-        # Handle terminal connection drops or missing market feed assets defensively
-        if rates is None or len(rates) == 0:
-            logger.warning(f"Failed to fetch current rates for {symbol}. MT5 Error: {mt5.last_error()}")
+        if live_rate is None or len(live_rate) == 0:
+            logger.warning(f"Failed to fetch live rates for {symbol}. MT5 Error: {mt5.last_error()}")
             return 0
 
-        # Parse numerical timestamp into a standard datetime object
-        new_candle_time = pd.to_datetime(rates[0]["time"], unit="s")
+        # This is the start time of the UNCLOSED live candle
+        live_candle_time = pd.to_datetime(live_rate[0]["time"], unit="s")
         required_columns = ["time", "open", "high", "low", "close", "tick_volume"]
 
-        # Cold Warmup: Populate full database slice if dataframe buffer is uninitialized
+        # Cold Warmup: Populate history if dataframe buffer is uninitialized
         if df is None or df.empty:
+            # Start from index 1 to explicitly exclude the unclosed live candle (index 0)
             initial_rates = mt5.copy_rates_from_pos(symbol, timeframe, 1, n_max)
             if initial_rates is None or len(initial_rates) == 0:
                 logger.error(f"Initialization failed. Cannot warmup history for {symbol}.")
@@ -65,27 +65,36 @@ def update_candle_dataframe(df, symbol, timeframe, n_max):
             df = pd.DataFrame(initial_rates)
             df["time"] = pd.to_datetime(df["time"], unit="s")
 
-            # Guard against structural metadata adjustments by the broker platform
             if not set(required_columns).issubset(df.columns):
                 logger.error(f"Unexpected data format returned from MT5 for symbol: {symbol}")
                 return 0
 
             df = df[required_columns]
-            logger.info(f"Successful cold warmup historical data frame for asset: {symbol}")
+            logger.info(f"Successful cold warmup historical data frame (closed candles only) for asset: {symbol}")
             return df
 
-        # Real-Time Append: Push the newest candle row if the bar interval timestamp has progressed
-        if new_candle_time > df["time"].max():
-            new_row = pd.DataFrame(rates)
-            new_row["time"] = pd.to_datetime(new_row["time"], unit="s")
-            new_row = new_row[required_columns]
-            df = pd.concat([df, new_row], ignore_index=True)
+        # Real-Time Append Check:
+        # Calculate the expected timestamp of the last completed candle.
+        # If the live candle time is greater than the latest candle in our closed-history dataframe,
+        # it means the previous candle has officially closed!
+        if live_candle_time > df["time"].max():
+            # Fetch index 1, which is now definitively the candle that just closed.
+            closed_rate = mt5.copy_rates_from_pos(symbol, timeframe, 1, 1)
 
-            # Dynamic Memory Management: Trim oldest records exceeding memory allocation targets
-            if len(df) > n_max:
-                df = df.iloc[-n_max:].reset_index(drop=True)
+            if closed_rate is not None and len(closed_rate) > 0:
+                new_row = pd.DataFrame(closed_rate)
+                new_row["time"] = pd.to_datetime(new_row["time"], unit="s")
+                new_row = new_row[required_columns]
 
-            logger.info(f"New closed candle appended for {symbol} at timestamp: {new_candle_time}")
+                # Double-check to ensure we aren't duplicating data
+                if new_row["time"].iloc[0] > df["time"].max():
+                    df = pd.concat([df, new_row], ignore_index=True)
+
+                    # Dynamic Memory Management
+                    if len(df) > n_max:
+                        df = df.iloc[-n_max:].reset_index(drop=True)
+
+                    logger.info(f"New closed candle appended for {symbol} at timestamp: {new_row['time'].iloc[0]}")
 
         return df
 

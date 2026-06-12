@@ -1,4 +1,4 @@
 from src.backtest import backtesting as BT
-from src.strategies import MACrossover as MACr
+from src.strategies import RSI
 
-BT.back_tester_results(MACr.MACrossover())
+BT.back_tester_results(RSI.RSI())
