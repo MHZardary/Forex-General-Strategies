@@ -2,8 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3511ee1c-d282-4b76-a4b7-7db3f82d1f43" name="Changes" comment="Sharpe ratio calculation added, and the result report print is improved.">
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/backtest/backtesting.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/backtest/backtesting.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/LiveTrade.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/LiveTrade.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/core/metatrader.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/core/metatrader.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/strategies/MACrossover.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/strategies/MACrossover.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/strategies/Strategy.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/strategies/Strategy.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,6 +56,7 @@
     "Python.plots.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "ai.playground.ignore.import.keys.banner.in.settings": "true",
@@ -103,6 +109,7 @@
       <option name="presentableId" value="Default" />
       <updated>1780693048751</updated>
       <workItem from="1780693049864" duration="35935000" />
+      <workItem from="1781270566786" duration="5650000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit including three functions for Mocing average and RSA calculations and plotting the price chart.">
       <option name="closed" value="true" />
@@ -268,7 +275,7 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$backtesting.coverage" NAME="backtesting Coverage Results" MODIFIED="1781258933987" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/backtest" />
-    <SUITE FILE_PATH="coverage/Forex_General_Strategies$main.coverage" NAME="main Coverage Results" MODIFIED="1781264278199" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
+    <SUITE FILE_PATH="coverage/Forex_General_Strategies$main.coverage" NAME="main Coverage Results" MODIFIED="1781270587693" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="" />
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$plots.coverage" NAME="plots Coverage Results" MODIFIED="1780751219051" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/visualization" />
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$MACrossover_BT.coverage" NAME="MACrossover_BT Coverage Results" MODIFIED="1780954288438" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/backtest" />
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$MACrossover.coverage" NAME="MACrossover Coverage Results" MODIFIED="1780869662943" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/strategies" />

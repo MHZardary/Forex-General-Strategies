@@ -13,7 +13,7 @@ class Strategy(ABC):
         self.is_continuous = is_continuous
 
     @abstractmethod
-    def calculate_signal(self, df: pd.DataFrame) -> str:
+    def calculate_signal(self, df: pd.DataFrame, current_position) -> str:
         """
         Takes a sliced DataFrame containing historical data up to the current bar.
         Must return a string signal: 'BUY', 'SELL', or 'HOLD'.

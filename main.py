@@ -1,4 +1,3 @@
-# Todo: Add commenting
 # Todo: Error handling
 # Todo: logging
 # Todo: Define more criterias

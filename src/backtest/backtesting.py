@@ -7,25 +7,32 @@ import matplotlib.pyplot as plt
 
 def data_loader(symbol: str = 'EURUSD', time_frame: str = '1m')-> pd.DataFrame:
     """
-    This function loads the data from the previously saved csv file and returns clean
-    pandas data frame called df.
-    :param time_frame:
-    :param symbol: symbol of
-    :return: df: Cleaned dataframe including financial data
-    """
+    Loads, cleans, and standardizes raw financial historical CSV data.
 
-    # Generate file name and the path
+    Parameters:
+    -----------
+    symbol : str, optional
+        The financial ticker asset symbol (default is 'EURUSD').
+    time_frame : str, optional
+        The candlestick timeline bar interval length (default is '1m').
+
+    Returns:
+    --------
+    pd.DataFrame
+        Cleaned and normalized financial dataframe containing standard lowercase
+        ohlcv headers and a parsed datetime index column.
+    """
     file_name = f"{symbol}_{time_frame}.csv"
     path = "data/raw/" + file_name
 
-    # Read the data into raw df
+    # Import MT5 exported data using standard tab-separated formatting
     df = pd.read_csv(path, sep="\t")
 
-    # Extract the names of columns based on the data in csv file
+    # Clean header metadata brackets
     df.columns = df.columns.str.replace('<', '', regex=False) \
         .str.replace('>', '', regex=False)
 
-    # Change the names of columns to standard notation
+    # Map raw headers to lowercase standard notation
     df = df.rename(columns={
         'DATE': 'date',
         'TIME': 'time',
@@ -38,7 +45,7 @@ def data_loader(symbol: str = 'EURUSD', time_frame: str = '1m')-> pd.DataFrame:
         'SPREAD': 'spread'
     })
 
-    # Create 'Datetime' column for the df
+    # Combine string date components into a single datetime column
     df['datetime'] = pd.to_datetime(
         df['date'] + ' ' + df['time'],
         format="%Y.%m.%d %H:%M:%S",
@@ -47,20 +54,39 @@ def data_loader(symbol: str = 'EURUSD', time_frame: str = '1m')-> pd.DataFrame:
     return df
 
 def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = '1m'):
+    """
+        Simulates trading historical performance over historical time-series datasets.
+
+        Parameters:
+        -----------
+        strategy : Strategy.Strategy
+            An instance of the trading strategy logic defining min_bars_required and calculate_signal.
+        symbol : str, optional
+            The financial ticker asset symbol (default is 'EURUSD').
+        time_frame : str, optional
+            The candlestick timeline bar interval length (default is '1m').
+
+        Returns:
+        --------
+        dict
+            A summary dictionary containing evaluation statistics (ROI, CAGR, Sharpe, Sortino ratios),
+            raw data logs, and performance visualization figures.
+        """
 
     back_test_results = {'symbol': symbol, 'time frame': time_frame, 'Financial data': pd.DataFrame()}
 
+    # Ingest full historical series
     df = data_loader(symbol, time_frame)
-
     back_test_results['Financial data'] = df
 
     current_position = 0
-
     long_price = []
     short_price = []
 
+    # Historical chronological simulation window iteration loop
     for i in tqdm(range(len(df)-strategy.min_bars_required)):
 
+        # Create a rolling historical snapshot slice matching the strategy buffer requirement
         df_sliced = df.iloc[i:i+strategy.min_bars_required]
 
         current_close = df_sliced['close'].iloc[-1]
@@ -69,30 +95,36 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
             format="%Y.%m.%d %H:%M:%S"
         )
 
-        signal = strategy.calculate_signal(df_sliced)
+        signal = strategy.calculate_signal(df_sliced, current_position)
 
-        if current_position == 1:  # Currently Long
+        # Long state execution management logic
+        if current_position == 1:
             if signal == 2 or signal == -1:
+                # Close out open active long position array row
                 if len(long_price) > 0:
                     long_price[-1][-1] = [current_close, dt]
                 current_position = 0
 
+                # Continuous Reversal: Instantly enter opposite short asset state
                 if strategy.is_continuous and signal == -1:
                     short_price.append([[current_close, dt], None])
                     current_position = -1
 
-        elif current_position == -1:  # Currently Short
+        # Short state execution management logic
+        elif current_position == -1:
             if signal == 2 or signal == 1:
+                # Close out open active short position array row
                 if len(short_price) > 0:
                     short_price[-1][-1] = [current_close, dt]
-                current_position = 0
+                    current_position = 0
 
+                # Continuous Reversal: Instantly enter opposite long asset state
                 if strategy.is_continuous and signal == 1:
                     long_price.append([[current_close, dt], None])
                     current_position = 1
 
+            # Flat structural execution condition rules
         else:
-            # Flat State
             if signal == 1:
                 long_price.append([[current_close, dt], None])
                 current_position = 1
@@ -100,7 +132,7 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
                 short_price.append([[current_close, dt], None])
                 current_position = -1
 
-        # 🛡️ FIXED: Shifted out of the loop scope so trades are preserved during processing
+    # Clean up unclosed trailing positions at the terminal edge of the dataset
     if len(short_price) > 0 and short_price[-1][1] is None:
         short_price = short_price[:-1]
     if len(long_price) > 0 and long_price[-1][1] is None:
@@ -109,7 +141,7 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
 
     trades = []
 
-    # Long trades
+    # Parse short position arrays into a structured trade logger ledger
     for trade in long_price:
         entry, exit_l = trade
         trades.append({
@@ -120,7 +152,7 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
             "direction": 1
         })
 
-    # Short trades
+    # Parse short position arrays into a structured trade logger ledger
     for trade in short_price:
         entry, exit_l = trade
         trades.append({
@@ -131,94 +163,79 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
             "direction": -1
         })
 
-    # Create and sort DataFrame
     df_trades = pd.DataFrame(trades)
-
     back_test_results['Trades data'] = df_trades
 
+    # Fallback exit condition for dead asset data feeds
     if df_trades.empty:
         return back_test_results
 
+    # Order positions chronologically by execution entry timestamp
     df_trades = df_trades.sort_values("entry_date").reset_index(drop=True)
-
     initial_balance = 100.0
 
+    # Calculate absolute returns and raw cumulative profit vectors
     df_trades['price_change'] = df_trades['exit_price'] - df_trades['entry_price']
-    # Multiplied the price change to 10 to calculate the profit for lot size.
     df_trades['profit'] = df_trades['price_change'] * df_trades['direction'] * 10
     df_trades["cum_profit"] = df_trades["profit"].cumsum()
 
+    # Performance Matrix: Compute total gross returns vs losses
     sum_profits = sum(df_trades[df_trades['profit'] > 0]['profit'].tolist())
     sum_loss = -sum(df_trades[df_trades['profit'] < 0]['profit'].tolist())
     profit_factor = sum_profits / sum_loss if sum_loss > 0 else float('inf')
 
+    # Store standard financial summary outputs
     back_test_results['profit factor'] = profit_factor
     back_test_results['total income'] = sum_profits - sum_loss
+    back_test_results['roi'] = (back_test_results['total income'] / initial_balance) * 100
 
-    roi = (back_test_results['total income'] / initial_balance) * 100
-    back_test_results['roi'] = roi
-
+    # Draw portfolio equity progression charting timelines
     plt.figure(figsize=(12, 6))
-
-    # Profit per trade
     plt.plot(
         df_trades["exit_date"],
         df_trades["profit"],
         label="Trade Profit",
         linewidth=1.5,
     )
-
-    # Accumulated profit
     plt.plot(
         df_trades["exit_date"],
         df_trades["cum_profit"],
         label="Accumulated Profit",
         linewidth=2,
     )
-
     plt.xlabel("Date")
     plt.ylabel("Profit")
     plt.title("Trading Performance")
     plt.legend()
-
-    # Rotate date labels for readability
     plt.xticks(rotation=45)
-
     plt.tight_layout()
     back_test_results['profit to time chart'] = plt
 
-
-    # 1. Extract boundary datetimes
+    # Calculate precise compounding annualized return benchmarks
     earliest_date = df['datetime'].min()
     latest_trade_date = df_trades['exit_date'].max()
-
-    # 2. Calculate time delta in years
     time_delta = latest_trade_date - earliest_date
     years = time_delta.total_seconds() / (365.25 * 24 * 3600)  # Accurate fractional year calculation
 
     ending_balance = initial_balance + back_test_results['total income']
 
+    # Mathematical metric logic allocations
     if years > 0 and ending_balance > 0:
+        # Compute Compound Annual Growth Rate (CAGR)
         cagr = (ending_balance / initial_balance) ** (1 / years) - 1
         back_test_results['cagr'] = cagr * 100
         back_test_results['time span'] = years
         back_test_results['back test time start'] = earliest_date
         back_test_results['back test time end'] = latest_trade_date
 
-        # =========================================================
-        # SHARPE RATIO COMPUTATION CORE
-        # =========================================================
-        # Calculate fractional percentage return per individual trade transaction
+        # Compute per-trade returns percent arrays
         df_trades['return_pct'] = df_trades['profit'] / initial_balance
-
         avg_trade_return = df_trades['return_pct'].mean()
         std_trade_return = df_trades['return_pct'].std()
 
+        # Compute standard and annualized Sharpe Risk Ratios
         if std_trade_return > 0:
-            # Base Trade Sharpe (Assumes risk_free_rate = 0.0)
             base_sharpe = avg_trade_return / std_trade_return
-
-            # Annualization scaling factor calculations
             trades_per_year = len(df_trades) / years
             annualized_sharpe = base_sharpe * np.sqrt(trades_per_year)
 
@@ -228,10 +245,8 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
             back_test_results['base_sharpe'] = 0.0
             back_test_results['annualized_sharpe'] = 0.0
 
-        # Sortino Calculation (Filter out everything above 0 to isolate downside volatility)
+        # Compute standard and annualized Sortino Downside Risk Ratios
         downside_returns = df_trades.loc[df_trades['return_pct'] < 0, 'return_pct']
-
-        # Compute Downside Deviation
         std_downside_return = np.sqrt(np.mean(downside_returns ** 2))
         if std_downside_return > 0:
             base_sortino = avg_trade_return / std_downside_return
@@ -241,6 +256,7 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
             back_test_results['base_sortino'] = 0.0
             back_test_results['annualized_sortino'] = 0.0
     else:
+        # Fallback padding parameters for bankrupt/unexecuted simulation runs
         back_test_results['cagr'] = 0.0
         back_test_results['time span'] = years
         back_test_results['base_sharpe'] = 0.0
@@ -251,11 +267,30 @@ def back_tester(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame:
     return back_test_results
 
 def back_tester_results(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = '1m'):
+    """
+        Executes back_tester and outputs formatted terminal summary metrics visualizations.
+
+        Parameters:
+        -----------
+        strategy : Strategy.Strategy
+            An instance of the trading strategy logic defining execution criteria blocks.
+        symbol : str, optional
+            The financial ticker asset symbol (default is 'EURUSD').
+        time_frame : str, optional
+            The candlestick timeline bar interval length (default is '1m').
+
+        Returns:
+        --------
+        None
+            Prints execution reports directly to stdout data buffers and invokes plot charts.
+    """
+    # Trigger simulation runner
     results = back_tester(strategy, symbol, time_frame)
+
     if results['Trades data'].empty:
-        print(
-            'Seems this strategy not generated any signals, for accurate inspection, checking logs is highly recommended')
+        print('Seems this strategy not generated any signals, for accurate inspection, checking logs is highly recommended')
     else:
+        # Format terminal logging performance interface tables
         print("\n" + "=" * 50 + "\nBACKTEST PERFORMANCE SUMMARY\n" + "=" * 50)
         print(f"Profit factor:             {results['profit factor']:.2f}")
         print(f"ROI is:                    {results['roi']:.1f}%")
@@ -267,4 +302,6 @@ def back_tester_results(strategy: Strategy.Strategy, symbol: str = 'EURUSD', tim
         print(f"Base Sortino (Per-Trade):  {results.get('base_sortino', 0.0):.3f}")
         print(f"Annualized Sortino Ratio:  {results.get('annualized_sortino', 0.0):.3f}")
         print("=" * 50 + "\n")
+
+        # Display the generated financial charts window
         results['profit to time chart'].show()
