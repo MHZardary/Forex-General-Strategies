@@ -96,7 +96,7 @@ def live(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = 
                 my_dataframe, symbol, time_frame, strategy.min_bars_required
             )
 
-            # 🌟 DEFENSIVE GUARD 2: Protect the history buffer variable from being corrupted by integer error values
+            # DEFENSIVE GUARD 2: Protect the history buffer variable from being corrupted by integer error values
             if isinstance(returned_data, pd.DataFrame) and not returned_data.empty:
                 my_dataframe = returned_data
             else:
@@ -151,20 +151,20 @@ def live(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = 
                     MT.close_market_positions(symbol, side_to_close="sell")
                     stats["sell_lots"] = 0.0
 
-                    # Allocation Management: Route entry, scale-up, or scale-down orders
-                    if stats.get("buy_lots", 0.0) == 0:
-                        logger.info(f"[{current_latest_time}] Execution Event -> Opening new Long trade.")
-                        MT.open_market_position(symbol=symbol, order_type="buy", volume=target_volume)
-                    elif stats["buy_lots"] < target_volume:
-                        needed_vol = round(target_volume - stats["buy_lots"], 2)
-                        if needed_vol >= 0.01:
-                            logger.info(f"[{current_latest_time}] Allocation Management -> Scaling up Long exposure by {needed_vol} lots.")
-                            MT.open_market_position(symbol=symbol, order_type="buy", volume=needed_vol)
-                    elif stats["buy_lots"] > target_volume:
-                        logger.info(f"[{current_latest_time}] Portfolio Adjustment -> Downscaling long position exposure to target: {target_volume}.")
-                        MT.close_market_positions(symbol, side_to_close="buy")
-                        time.sleep(0.5)
-                        MT.open_market_position(symbol=symbol, order_type="buy", volume=target_volume)
+                # Allocation Management: Route entry, scale-up, or scale-down orders
+                if stats.get("buy_lots", 0.0) == 0:
+                    logger.info(f"[{current_latest_time}] Execution Event -> Opening new Long trade.")
+                    MT.open_market_position(symbol=symbol, order_type="buy", volume=target_volume)
+                elif stats["buy_lots"] < target_volume:
+                    needed_vol = round(target_volume - stats["buy_lots"], 2)
+                    if needed_vol >= 0.01:
+                        logger.info(f"[{current_latest_time}] Allocation Management -> Scaling up Long exposure by {needed_vol} lots.")
+                        MT.open_market_position(symbol=symbol, order_type="buy", volume=needed_vol)
+                elif stats["buy_lots"] > target_volume:
+                    logger.info(f"[{current_latest_time}] Portfolio Adjustment -> Downscaling long position exposure to target: {target_volume}.")
+                    MT.close_market_positions(symbol, side_to_close="buy")
+                    time.sleep(0.5)
+                    MT.open_market_position(symbol=symbol, order_type="buy", volume=target_volume)
 
             # PROCESS SELL / ENTRY SHORT SIGNALS
             elif signal == -1:
@@ -175,21 +175,21 @@ def live(strategy: Strategy.Strategy, symbol: str = 'EURUSD', time_frame: str = 
                     stats["buy_lots"] = 0.0
 
                     # Allocation Management: Route entry, scale-up, or scale-down orders
-                    if stats.get("sell_lots", 0.0) == 0:
-                        logger.info(f"[{current_latest_time}] Execution Event -> Opening new Short trade.")
-                        MT.open_market_position(symbol=symbol, order_type="sell", volume=target_volume)
-                    elif stats["sell_lots"] < target_volume:
-                        needed_vol = round(target_volume - stats["sell_lots"], 2)
-                        if needed_vol >= 0.01:
-                            logger.info(f"[{current_latest_time}] Allocation Management -> Scaling up Short exposure by {needed_vol} lots.")
-                            MT.open_market_position(symbol=symbol, order_type="sell", volume=needed_vol)
-                    elif stats["sell_lots"] > target_volume:
-                        logger.info(f"[{current_latest_time}] Portfolio Adjustment -> Downscaling short position exposure to target: {target_volume}.")
-                        MT.close_market_positions(symbol, side_to_close="sell")
-                        time.sleep(0.5)
-                        MT.open_market_position(symbol=symbol, order_type="sell", volume=target_volume)
+                if stats.get("sell_lots", 0.0) == 0:
+                    logger.info(f"[{current_latest_time}] Execution Event -> Opening new Short trade.")
+                    MT.open_market_position(symbol=symbol, order_type="sell", volume=target_volume)
+                elif stats["sell_lots"] < target_volume:
+                    needed_vol = round(target_volume - stats["sell_lots"], 2)
+                    if needed_vol >= 0.01:
+                        logger.info(f"[{current_latest_time}] Allocation Management -> Scaling up Short exposure by {needed_vol} lots.")
+                        MT.open_market_position(symbol=symbol, order_type="sell", volume=needed_vol)
+                elif stats["sell_lots"] > target_volume:
+                    logger.info(f"[{current_latest_time}] Portfolio Adjustment -> Downscaling short position exposure to target: {target_volume}.")
+                    MT.close_market_positions(symbol, side_to_close="sell")
+                    time.sleep(0.5)
+                    MT.open_market_position(symbol=symbol, order_type="sell", volume=target_volume)
 
-                time.sleep(1)  # General loop breathing space to keep connection thread stable
+            time.sleep(1)  # General loop breathing space to keep connection thread stable
 
     except KeyboardInterrupt:
         logger.info("Stopping live execution script cleanly via user command...")

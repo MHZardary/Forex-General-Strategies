@@ -297,7 +297,7 @@ def close_market_positions(symbol, side_to_close="all"):
                 "magic": 0,
                 "comment": "Python closing script",
                 "type_time": mt5.ORDER_TIME_GTC,
-                "type_filling": mt5.ORDER_FILLING_IOC,
+                "type_filling": mt5.ORDER_FILLING_FOK,
             }
 
             # Dispatch transmission block directly to MT5 order server terminal
@@ -375,7 +375,7 @@ def open_market_position(symbol, order_type, volume, deviation=20, magic=0):
             "magic": magic,
             "comment": "Python execution script",
             "type_time": mt5.ORDER_TIME_GTC,
-            "type_filling": mt5.ORDER_FILLING_IOC,
+            "type_filling": mt5.ORDER_FILLING_FOK,
         }
 
         # Dispatch market request transaction to your broker network
