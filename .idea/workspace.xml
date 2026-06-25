@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="3511ee1c-d282-4b76-a4b7-7db3f82d1f43" name="Changes" comment="Live trade fixed">
-      <change afterPath="$PROJECT_DIR$/src/strategies/BollingerBands.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/strategies/ChaikinMoneyFlow.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/strategies/HeikinAshi.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/strategies/MACD.py" afterDir="false" />
+    <list default="true" id="3511ee1c-d282-4b76-a4b7-7db3f82d1f43" name="Changes" comment="MACD, Bolinger Bands, HeikinAshi and Chaikin Money flow strategies implemented.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/indicators/MA.py" beforeDir="false" afterPath="$PROJECT_DIR$/src/indicators/MA.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -109,7 +105,8 @@
       <updated>1780693048751</updated>
       <workItem from="1780693049864" duration="35935000" />
       <workItem from="1781270566786" duration="44362000" />
-      <workItem from="1781984223042" duration="4473000" />
+      <workItem from="1781984223042" duration="7527000" />
+      <workItem from="1782297596009" duration="4922000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit including three functions for Mocing average and RSA calculations and plotting the price chart.">
       <option name="closed" value="true" />
@@ -303,7 +300,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781856568109</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="MACD, Bolinger Bands, HeikinAshi and Chaikin Money flow strategies implemented.">
+      <option name="closed" value="true" />
+      <created>1781988914729</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1781988914730</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -343,7 +348,8 @@
     <MESSAGE value="fixed an error about expectancy calculation." />
     <MESSAGE value="TimeFrame mapper for MetaTrader time frames has been created. Live trading has started, Executing to check the performance." />
     <MESSAGE value="Live trade fixed" />
-    <option name="LAST_COMMIT_MESSAGE" value="Live trade fixed" />
+    <MESSAGE value="MACD, Bolinger Bands, HeikinAshi and Chaikin Money flow strategies implemented." />
+    <option name="LAST_COMMIT_MESSAGE" value="MACD, Bolinger Bands, HeikinAshi and Chaikin Money flow strategies implemented." />
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/Forex_General_Strategies$backtesting.coverage" NAME="backtesting Coverage Results" MODIFIED="1781258933987" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/src/backtest" />
